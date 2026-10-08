@@ -1,11 +1,11 @@
 [package]
-name = "clash-verge"
+name = "clash-verge-rev-app"
 version = "2.5.8"
-description = "clash verge"
+description = "Clash Verge Rev App - independent application routing client"
 authors = ["zzzgydi", "Tunglies", "wonfen", "MystiPanda"]
 license = "GPL-3.0-only"
-repository = "https://github.com/clash-verge-rev/clash-verge-rev.git"
-default-run = "clash-verge"
+repository = "https://github.com/AAAYNMMM/clash-verge-rev-app.git"
+default-run = "clash-verge-rev-app"
 build = "build.rs"
 edition = "2024"
 rust-version = "1.99"
@@ -26,7 +26,7 @@ clippy = ["tauri/test"]
 perf-harness = ["dep:tauri-plugin-wdio-webdriver"]
 
 [package.metadata.bundle]
-identifier = "io.github.clash-verge-rev.clash-verge-rev"
+identifier = "io.github.aaaynmmm.clash-verge-rev-app"
 
 [build-dependencies]
 tauri-build = { version = "2.7.1", features = [] }
@@ -99,7 +99,7 @@ tracing = { workspace = true }
 tauri-plugin-devtools = { version = "2.2.2", optional = true }
 tauri-plugin-mihomo = { git = "https://github.com/clash-verge-rev/tauri-plugin-mihomo", branch = "main" }
 async-trait = "0.1.92"
-clash_verge_service_ipc = { git = "https://github.com/clash-verge-rev/clash-verge-service-ipc.git", tag = "v2.7.6", version = "2.7.6", features = [
+clash_verge_service_ipc = { path = "../crates/clash-verge-rev-app-service", version = "2.7.6", features = [
   "client",
 ] }
 arc-swap = "1.9.2"

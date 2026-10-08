@@ -17,4 +17,4 @@ export const resolveDisplayedMixedPort = ({
   selected,
   merge,
 }: MixedPortSources): number =>
-  [live, runtime, selected, merge].find(isValidPort) ?? 7897
+  [live, runtime, selected, merge].find(isValidPort) ?? 17897

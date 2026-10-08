@@ -91,7 +91,7 @@ export function WebUIViewer({ ref }: { ref?: Ref<DialogRef> }) {
           .slice(clashInfo.server.indexOf(':') + 1)
           .trim()
 
-        url = url.replaceAll('%port', port || '9097')
+        url = url.replaceAll('%port', port || '19097')
         url = url.replaceAll(
           '%secret',
           encodeURIComponent(clashInfo.secret || ''),

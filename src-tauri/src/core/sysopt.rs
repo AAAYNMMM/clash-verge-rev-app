@@ -193,6 +193,9 @@ fn skip_without_network_service(enabling: bool, outcome: sysproxy::Result<()>) -
 /// Force both proxy kinds off, in one blocking hop.
 async fn disable_all_proxies(sys: Sysproxy, auto: Autoproxy) -> Result<()> {
     tokio::task::spawn_blocking(move || {
+        if !super::proxy_ownership::may_write(&sys, &auto, (&sys, &auto))? {
+            return Ok(());
+        }
         disable_both(
             || skip_without_network_service(sys.enable, sys.set_system_proxy()).map(|_reached_os| ()),
             || skip_without_network_service(auto.enable, auto.set_auto_proxy()).map(|_reached_os| ()),
@@ -430,6 +433,7 @@ impl Sysopt {
             verge.enable_proxy_guard.unwrap_or_default(),
         );
 
+        let previous = self.inner_proxy.read().clone();
         let (sys, auto, guard_type) = {
             let (sys, auto) = &mut *self.inner_proxy.write();
             sys.host = proxy_host.into();
@@ -470,6 +474,14 @@ impl Sysopt {
         let guard_was_running = !self.access_guard().read().get_state().is_stopped();
         let idle = self.access_guard().read().shutdown();
         let drained = idle.wait_timeout(GUARD_DRAIN_TIMEOUT).await;
+
+        match super::proxy_ownership::may_write(&sys, &auto, (&previous.0, &previous.1)) {
+            Ok(true) => {}
+            outcome => {
+                self.access_guard().write().set_guard_type(GuardType::None);
+                return outcome.map(|_| ());
+            }
+        }
 
         // A slow guard does not stop the write, but it does make the OS read untrustworthy.
         if cfg!(target_os = "macos")

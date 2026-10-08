@@ -12,10 +12,10 @@ notifications:
     'off': System proxy has been disabled.
   systemProxyFailed:
     title: 시스템 프록시
-    body: 시스템 프록시를 설정하지 못했습니다. 이유는 Clash Verge를 열어 확인하십시오.
+    body: 시스템 프록시를 설정하지 못했습니다. 이유는 Clash Verge Rev App를 열어 확인하십시오.
   systemProxyGuardStopped:
     title: 시스템 프록시 가드
-    body: 연속으로 실패하여 중지되었습니다. 이유는 Clash Verge를 열어 확인하십시오.
+    body: 연속으로 실패하여 중지되었습니다. 이유는 Clash Verge Rev App를 열어 확인하십시오.
   tunModeToggled:
     title: TUN 모드
     'on': TUN mode has been enabled.
@@ -28,15 +28,15 @@ notifications:
     body: 프로필이 다시 활성화되었습니다.
   appQuit:
     title: 곧 종료
-    body: Clash Verge가 곧 종료됩니다.
+    body: Clash Verge Rev App가 곧 종료됩니다.
   updateReady:
-    title: Clash Verge Update
+    title: Clash Verge Rev App Update
     body: A new version (v{version}) has been downloaded and is ready to install.
     installNow: Install Now
     later: Later
 service:
-  adminInstallPrompt: Clash Verge 서비스 설치에는 관리자 권한이 필요합니다.
-  adminUninstallPrompt: Clash Verge 서비스 제거에는 관리자 권한이 필요합니다.
+  adminInstallPrompt: Clash Verge Rev App 서비스 설치에는 관리자 권한이 필요합니다.
+  adminUninstallPrompt: Clash Verge Rev App 서비스 제거에는 관리자 권한이 필요합니다.
 launchGuard:
   currentExeError: '애플리케이션 위치를 확인할 수 없습니다: {error}'
   homeDirError: '현재 사용자의 홈 디렉터리를 확인할 수 없어 애플리케이션을 종료합니다: {error}'

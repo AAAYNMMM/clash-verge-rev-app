@@ -26,6 +26,9 @@
 <details>
 <summary><strong> ✨ 新增功能 </strong></summary>
 
+- 新增 Clash Verge Rev App 独立版本，隔离安装、配置、后台服务与更新，并更换品牌图标
+
+
 - 新增「APP」模式：按应用分组选择固定节点或跟随规则，正则筛选节点且不自动故障切换
 
 

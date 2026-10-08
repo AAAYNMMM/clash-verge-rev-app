@@ -96,7 +96,7 @@ pub async fn toggle_tun_mode(not_save_file: Option<bool>) -> bool {
 }
 
 pub async fn copy_clash_env() {
-    let env_ip = env::var("CLASH_VERGE_REV_IP").ok();
+    let env_ip = env::var("CLASH_VERGE_REV_APP_REV_IP").ok();
     let verge_cfg = Config::verge().await.latest_arc();
     let ip = env_ip
         .as_deref()

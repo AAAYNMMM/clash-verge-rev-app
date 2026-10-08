@@ -1082,7 +1082,54 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
-name = "clash-verge"
+name = "clash-verge-draft"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "criterion",
+ "parking_lot",
+ "tokio",
+]
+
+[[package]]
+name = "clash-verge-i18n"
+version = "0.1.0"
+dependencies = [
+ "rust-i18n",
+ "sys-locale",
+]
+
+[[package]]
+name = "clash-verge-limiter"
+version = "0.1.0"
+
+[[package]]
+name = "clash-verge-logging"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "flexi_logger",
+ "log",
+ "parking_lot",
+ "tracing-estuary",
+]
+
+[[package]]
+name = "clash-verge-media-unlock"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clash-verge-logging",
+ "log",
+ "reqwest 0.13.5",
+ "rust_iso3166",
+ "serde",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
+name = "clash-verge-rev-app"
 version = "2.5.8"
 dependencies = [
  "aes-gcm",
@@ -1170,53 +1217,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "clash-verge-draft"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "criterion",
- "parking_lot",
- "tokio",
-]
-
-[[package]]
-name = "clash-verge-i18n"
-version = "0.1.0"
-dependencies = [
- "rust-i18n",
- "sys-locale",
-]
-
-[[package]]
-name = "clash-verge-limiter"
-version = "0.1.0"
-
-[[package]]
-name = "clash-verge-logging"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "flexi_logger",
- "log",
- "parking_lot",
- "tracing-estuary",
-]
-
-[[package]]
-name = "clash-verge-media-unlock"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clash-verge-logging",
- "log",
- "reqwest 0.13.5",
- "rust_iso3166",
- "serde",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "clash-verge-signal"
 version = "0.1.0"
 dependencies = [
@@ -1228,20 +1228,27 @@ dependencies = [
 [[package]]
 name = "clash_verge_service_ipc"
 version = "2.7.6"
-source = "git+https://github.com/clash-verge-rev/clash-verge-service-ipc.git?tag=v2.7.6#b2a7427d6681c8d3780ab83a73f4dc21da2f22d6"
 dependencies = [
  "anyhow",
+ "flexi_logger",
+ "http",
  "kode-bridge",
  "libc",
  "log",
+ "nix",
  "once_cell",
+ "parking_lot",
  "serde",
  "serde_json",
+ "serial_test",
  "sha2 0.11.0",
  "strum",
  "strum_macros",
  "sysproxy",
  "tokio",
+ "tracing",
+ "tracing-estuary",
+ "tracing-subscriber",
  "url",
  "windows-service",
  "windows-sys 0.61.2",
@@ -6506,6 +6513,31 @@ dependencies = [
  "ryu",
  "serde",
  "unsafe-libyaml",
+]
+
+[[package]]
+name = "serial_test"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6df5ed973ad8d834e09f824f9e9f449af6b9a3745f78dec7cc752770bd3bf11"
+dependencies = [
+ "futures-executor",
+ "futures-util",
+ "log",
+ "once_cell",
+ "parking_lot",
+ "serial_test_derive",
+]
+
+[[package]]
+name = "serial_test_derive"
+version = "4.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a22144e767da4ddd8416dbf383700542ffd8a5dc493dfecedfe1fe3ad03c98ae"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 3.0.5",
 ]
 
 [[package]]

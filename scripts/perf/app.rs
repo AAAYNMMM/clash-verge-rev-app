@@ -59,7 +59,7 @@ pub fn run() -> std::process::ExitCode {
                 "perf",
                 tauri::WebviewUrl::App(format!("index.html?port={port}").into()),
             )
-            .title("Clash Verge - performance replay")
+            .title("Clash Verge Rev App - performance replay")
             .inner_size(1000., 700.)
             .visible(false)
             .focused(false)

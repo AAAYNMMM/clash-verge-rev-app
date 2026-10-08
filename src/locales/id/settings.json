@@ -2,11 +2,12 @@
   "page": {
     "actions": {
       "manual": "Manual",
-      "telegram": "Saluran Telegram",
-      "github": "Repositori Github"
+      "github": "Repositori Github",
+      "issues": "Report an issue"
     },
     "actionsGroupLabel": "Tautan pengaturan",
-    "title": "Pengaturan"
+    "title": "Pengaturan",
+    "coexistence": "This fork has independent installation, settings and services. System proxy and TUN change shared OS network settings; enable them in only one client at a time."
   },
   "sections": {
     "system": {
@@ -667,14 +668,14 @@
         "reinstallFailed": "Gagal memasang ulang layanan",
         "repairFailed": "Gagal memperbaiki layanan",
         "sidecarFailed": "Gagal melanjutkan dengan Sidecar",
-        "coreAlreadyRunning": "Tidak dapat memulai mode Sidecar: inti lain masih berjalan (PID {{pid}}). Tutup instans Clash Verge lain atau aplikasi yang menggunakan inti tersebut, lalu coba lagi."
+        "coreAlreadyRunning": "Tidak dapat memulai mode Sidecar: inti lain masih berjalan (PID {{pid}}). Tutup instans Clash Verge Rev App lain atau aplikasi yang menggunakan inti tersebut, lalu coba lagi."
       },
       "sysproxy": {
-        "privilegeRequired": "Tidak dapat mengatur proxy sistem: macOS menolak perubahan ini karena hak akses tidak mencukupi. Pasang layanan Clash Verge; jika Anda administrator, Anda juga dapat mematikan keharusan kata sandi administrator untuk pengaturan seluruh sistem di opsi lanjutan Pengaturan Sistem → Privasi & Keamanan.",
+        "privilegeRequired": "Tidak dapat mengatur proxy sistem: macOS menolak perubahan ini karena hak akses tidak mencukupi. Pasang layanan Clash Verge Rev App; jika Anda administrator, Anda juga dapat mematikan keharusan kata sandi administrator untuk pengaturan seluruh sistem di opsi lanjutan Pengaturan Sistem → Privasi & Keamanan.",
         "directFallback": "Gagal mengatur proxy sistem; lalu lintas dikembalikan ke koneksi langsung.",
         "guardStopped": "Penjaga proxy sistem berhenti setelah gagal beberapa kali berturut-turut. Proxy sistem tidak lagi dipertahankan secara otomatis.",
-        "sidecarWhileServiceReady": "Proxy sistem tidak dapat diatur: layanan Clash Verge sudah siap, tetapi inti masih berjalan sebagai Sidecar. Mulai ulang inti untuk beralih ke mode layanan.",
-        "coreNotReady": "Proxy sistem tidak dapat diaktifkan karena inti tidak berjalan. Jalankan inti (atau pasang/perbaiki layanan Clash Verge) lalu coba lagi.",
+        "sidecarWhileServiceReady": "Proxy sistem tidak dapat diatur: layanan Clash Verge Rev App sudah siap, tetapi inti masih berjalan sebagai Sidecar. Mulai ulang inti untuk beralih ke mode layanan.",
+        "coreNotReady": "Proxy sistem tidak dapat diaktifkan karena inti tidak berjalan. Jalankan inti (atau pasang/perbaiki layanan Clash Verge Rev App) lalu coba lagi.",
         "systemCallFailed": "Proxy sistem gagal ditulis karena panggilan sistem Windows gagal. Ini biasanya sementara, coba lagi."
       }
     },

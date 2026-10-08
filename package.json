@@ -1,5 +1,5 @@
 {
-  "name": "clash-verge",
+  "name": "clash-verge-rev-app",
   "version": "2.5.8",
   "license": "GPL-3.0-only",
   "scripts": {
@@ -40,7 +40,8 @@
     "perf:build": "node scripts/perf/build.mjs",
     "perf:run": "node scripts/perf/run.mjs",
     "perf:compare": "node scripts/perf/compare.mjs",
-    "perf:test": "node --test scripts/perf/report.test.mjs"
+    "perf:test": "node --test scripts/perf/report.test.mjs",
+    "test:identity": "node --test scripts/check-fork-identity.test.mjs"
   },
   "dependencies": {
     "@dnd-kit/collision": "^0.5.0",

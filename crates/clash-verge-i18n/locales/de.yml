@@ -12,10 +12,10 @@ notifications:
     'off': Der Systemproxy wurde deaktiviert.
   systemProxyFailed:
     title: Systemproxy
-    body: Der Systemproxy konnte nicht gesetzt werden. Öffnen Sie Clash Verge, um zu sehen, warum.
+    body: Der Systemproxy konnte nicht gesetzt werden. Öffnen Sie Clash Verge Rev App, um zu sehen, warum.
   systemProxyGuardStopped:
     title: Systemproxy-Wächter
-    body: Nach mehreren Fehlversuchen in Folge gestoppt. Öffnen Sie Clash Verge, um zu sehen, warum.
+    body: Nach mehreren Fehlversuchen in Folge gestoppt. Öffnen Sie Clash Verge Rev App, um zu sehen, warum.
   tunModeToggled:
     title: TUN-Modus
     'on': Der TUN-Modus wurde aktiviert.
@@ -28,15 +28,15 @@ notifications:
     body: Profil reaktiviert.
   appQuit:
     title: Beenden steht bevor
-    body: Clash Verge wird gleich beendet.
+    body: Clash Verge Rev App wird gleich beendet.
   updateReady:
-    title: Clash-Verge-Update
+    title: Clash Verge Rev App-Update
     body: Eine neue Version (v{version}) wurde heruntergeladen und kann installiert werden.
     installNow: Jetzt installieren
     later: Später
 service:
-  adminInstallPrompt: Für die Installation des Clash-Verge-Dienstes sind Administratorrechte erforderlich.
-  adminUninstallPrompt: Für die Deinstallation des Clash-Verge-Dienstes sind Administratorrechte erforderlich.
+  adminInstallPrompt: Für die Installation des Clash Verge Rev App-Dienstes sind Administratorrechte erforderlich.
+  adminUninstallPrompt: Für die Deinstallation des Clash Verge Rev App-Dienstes sind Administratorrechte erforderlich.
 launchGuard:
   currentExeError: 'Der Speicherort der Anwendung konnte nicht ermittelt werden: {error}'
   homeDirError: 'Das Benutzerverzeichnis des aktuellen Benutzers konnte nicht ermittelt werden. Die Anwendung wird beendet: {error}'

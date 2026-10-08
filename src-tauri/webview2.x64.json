@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "identifier": "io.github.clash-verge-rev.clash-verge-rev",
+  "identifier": "io.github.aaaynmmm.clash-verge-rev-app",
   "bundle": {
     "targets": ["nsis"],
     "windows": {
@@ -26,10 +26,9 @@
       "active": true,
       "dialog": false,
       "endpoints": [
-        "https://update.hwdns.net/https://github.com/clash-verge-rev/clash-verge-rev/releases/download/updater/update-fixed-webview2-proxy.json",
-        "https://github.com/clash-verge-rev/clash-verge-rev/releases/download/updater/update-fixed-webview2.json"
+        "https://github.com/AAAYNMMM/clash-verge-rev-app/releases/download/updater/update-fixed-webview2.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEQyOEMyRjBCQkVGOUJEREYKUldUZnZmbStDeStNMHU5Mmo1N24xQXZwSVRYbXA2NUpzZE5oVzlqeS9Bc0t6RVV4MmtwVjBZaHgK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEZDNjI2MEIxOTAyRjhGQ0MKUldUTWp5K1FzV0JpL0tKcGVSeElDVE96YkYzRnF5bmtVWU9FY2pSdnJrb1pXb1VJallmSHVNVGIK"
     }
   }
 }

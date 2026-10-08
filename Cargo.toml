@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "crates/clash-verge-rev-app-service",
   "src-tauri",
   "crates/clash-verge-draft",
   "crates/clash-verge-media-unlock",
@@ -104,6 +105,7 @@ windows-sys = { version = "0.61.2", features = [
   "Win32_Foundation",
   "Win32_NetworkManagement_IpHelper",
   "Win32_Networking_WinSock",
+  "Win32_Networking_WinInet",
   "Win32_Security",
   "Win32_Security_Authorization",
   "Win32_Storage_FileSystem",

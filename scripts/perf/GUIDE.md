@@ -13,7 +13,7 @@ WebDriver installation is needed. Keep each binary beside its generated manifest
 ```sh
 pnpm install --frozen-lockfile
 pnpm perf:build target/perf/baseline-build
-caffeinate -di pnpm perf:run -- --binary target/perf/baseline-build/clash-verge --output target/perf/baseline --repeat 3 --seconds 20 --warmup 10
+caffeinate -di pnpm perf:run -- --binary target/perf/baseline-build/clash-verge-rev-app --output target/perf/baseline --repeat 3 --seconds 20 --warmup 10
 pnpm perf:compare -- target/perf/baseline target/perf/baseline
 pnpm perf:test
 ```
@@ -102,11 +102,11 @@ For A/B, build the candidate separately and alternate independent instances:
 ```sh
 pnpm perf:build target/perf/candidate-build
 for i in 1 2 3; do
-  caffeinate -di pnpm perf:run -- --binary target/perf/baseline-build/clash-verge --repeat 1 --output target/perf/ab-baseline/$i
-  caffeinate -di pnpm perf:run -- --binary target/perf/candidate-build/clash-verge --repeat 1 --output target/perf/ab-candidate/$i
+  caffeinate -di pnpm perf:run -- --binary target/perf/baseline-build/clash-verge-rev-app --repeat 1 --output target/perf/ab-baseline/$i
+  caffeinate -di pnpm perf:run -- --binary target/perf/candidate-build/clash-verge-rev-app --repeat 1 --output target/perf/ab-candidate/$i
 done
 pnpm perf:compare -- target/perf/ab-baseline target/perf/ab-candidate
-pnpm perf:run -- --binary target/perf/candidate-build/clash-verge --repeat 1 --seconds 5 --warmup 2 --fail-phase hidden --output target/perf/failed
+pnpm perf:run -- --binary target/perf/candidate-build/clash-verge-rev-app --repeat 1 --seconds 5 --warmup 2 --fail-phase hidden --output target/perf/failed
 ```
 
 Comparison accepts summary files, run directories or groups of run directories.

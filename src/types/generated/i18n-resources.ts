@@ -1291,10 +1291,11 @@ export interface TranslationResources {
       page: {
         actions: {
           github: string
+          issues: string
           manual: string
-          telegram: string
         }
         actionsGroupLabel: string
+        coexistence: string
         title: string
       }
       sections: {

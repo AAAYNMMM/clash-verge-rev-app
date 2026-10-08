@@ -163,7 +163,7 @@ async function updateCargoLockVersion(newVersion) {
     ? newVersion.slice(1)
     : newVersion
   const packageVersionPattern =
-    /(\[\[package\]\]\r?\nname = "clash-verge"\r?\nversion = )"[^"]+"/
+    /(\[\[package\]\]\r?\nname = "clash-verge-rev-app"\r?\nversion = )"[^"]+"/
 
   try {
     const data = await fs.readFile(cargoLockPath, 'utf8')
@@ -173,7 +173,9 @@ async function updateCargoLockVersion(newVersion) {
     )
 
     if (updatedData === data) {
-      throw new Error('clash-verge package entry was not found in Cargo.lock')
+      throw new Error(
+        'clash-verge-rev-app package entry was not found in Cargo.lock',
+      )
     }
 
     await fs.writeFile(cargoLockPath, updatedData, 'utf8')

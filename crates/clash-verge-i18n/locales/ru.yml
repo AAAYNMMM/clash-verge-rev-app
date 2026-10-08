@@ -12,10 +12,10 @@ notifications:
     'off': Системный прокси отключён.
   systemProxyFailed:
     title: Системный прокси
-    body: Не удалось настроить системный прокси. Откройте Clash Verge, чтобы узнать причину.
+    body: Не удалось настроить системный прокси. Откройте Clash Verge Rev App, чтобы узнать причину.
   systemProxyGuardStopped:
     title: Страж системного прокси
-    body: Остановлен после нескольких неудач подряд. Откройте Clash Verge, чтобы узнать причину.
+    body: Остановлен после нескольких неудач подряд. Откройте Clash Verge Rev App, чтобы узнать причину.
   tunModeToggled:
     title: Режим TUN
     'on': Режим TUN включён.
@@ -28,15 +28,15 @@ notifications:
     body: Профиль повторно активирован.
   appQuit:
     title: Скорый выход
-    body: Clash Verge скоро завершит работу.
+    body: Clash Verge Rev App скоро завершит работу.
   updateReady:
-    title: Обновление Clash Verge
+    title: Обновление Clash Verge Rev App
     body: Новая версия (v{version}) скачана и готова к установке.
     installNow: Установить сейчас
     later: Позже
 service:
-  adminInstallPrompt: Для установки службы Clash Verge требуются права администратора.
-  adminUninstallPrompt: Для удаления службы Clash Verge требуются права администратора.
+  adminInstallPrompt: Для установки службы Clash Verge Rev App требуются права администратора.
+  adminUninstallPrompt: Для удаления службы Clash Verge Rev App требуются права администратора.
 launchGuard:
   currentExeError: 'Не удалось определить расположение приложения: {error}'
   homeDirError: 'Не удалось определить домашний каталог текущего пользователя. Приложение будет закрыто: {error}'

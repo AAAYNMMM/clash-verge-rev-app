@@ -12,10 +12,10 @@ notifications:
     'off': O proxy do sistema foi desativado.
   systemProxyFailed:
     title: Proxy do sistema
-    body: Não foi possível definir o proxy do sistema. Abra o Clash Verge para ver o motivo.
+    body: Não foi possível definir o proxy do sistema. Abra o Clash Verge Rev App para ver o motivo.
   systemProxyGuardStopped:
     title: Proteção do proxy do sistema
-    body: A proteção parou após várias falhas de execução. Abra o Clash Verge para ver o motivo.
+    body: A proteção parou após várias falhas de execução. Abra o Clash Verge Rev App para ver o motivo.
   tunModeToggled:
     title: Modo TUN
     'on': O modo TUN foi ativado.
@@ -28,15 +28,15 @@ notifications:
     body: Perfil reativado.
   appQuit:
     title: Prestes a sair
-    body: O Clash Verge está prestes a sair.
+    body: O Clash Verge Rev App está prestes a sair.
   updateReady:
-    title: Atualização do Clash Verge
+    title: Atualização do Clash Verge Rev App
     body: Uma nova versão (v{version}) foi baixada e está pronta para instalar.
     installNow: Instalar agora
     later: Depois
 service:
-  adminInstallPrompt: A instalação do serviço do Clash Verge requer privilégios de administrador.
-  adminUninstallPrompt: A desinstalação do serviço do Clash Verge requer privilégios de administrador.
+  adminInstallPrompt: A instalação do serviço do Clash Verge Rev App requer privilégios de administrador.
+  adminUninstallPrompt: A desinstalação do serviço do Clash Verge Rev App requer privilégios de administrador.
 launchGuard:
   currentExeError: 'Não foi possível determinar a localização do aplicativo: {error}'
   homeDirError: 'Não foi possível determinar o diretório pessoal do usuário atual. O aplicativo será encerrado: {error}'

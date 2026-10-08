@@ -12,10 +12,10 @@ notifications:
     'off': System proxy has been disabled.
   systemProxyFailed:
     title: Proxy Sistem
-    body: Proxy sistem tidak dapat diatur. Buka Clash Verge untuk melihat alasannya.
+    body: Proxy sistem tidak dapat diatur. Buka Clash Verge Rev App untuk melihat alasannya.
   systemProxyGuardStopped:
     title: Penjaga Proxy Sistem
-    body: Berhenti setelah gagal beberapa kali berturut-turut. Buka Clash Verge untuk melihat alasannya.
+    body: Berhenti setelah gagal beberapa kali berturut-turut. Buka Clash Verge Rev App untuk melihat alasannya.
   tunModeToggled:
     title: Mode TUN
     'on': TUN mode has been enabled.
@@ -28,15 +28,15 @@ notifications:
     body: Profil diaktifkan kembali.
   appQuit:
     title: Akan Keluar
-    body: Clash Verge akan keluar.
+    body: Clash Verge Rev App akan keluar.
   updateReady:
-    title: Clash Verge Update
+    title: Clash Verge Rev App Update
     body: A new version (v{version}) has been downloaded and is ready to install.
     installNow: Install Now
     later: Later
 service:
-  adminInstallPrompt: Menginstal layanan Clash Verge memerlukan hak administrator.
-  adminUninstallPrompt: Menghapus instalasi layanan Clash Verge memerlukan hak administrator.
+  adminInstallPrompt: Menginstal layanan Clash Verge Rev App memerlukan hak administrator.
+  adminUninstallPrompt: Menghapus instalasi layanan Clash Verge Rev App memerlukan hak administrator.
 launchGuard:
   currentExeError: 'Lokasi aplikasi tidak dapat ditentukan: {error}'
   homeDirError: 'Direktori beranda pengguna saat ini tidak dapat ditentukan. Aplikasi akan ditutup: {error}'

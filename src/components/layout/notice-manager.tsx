@@ -71,7 +71,7 @@ const resolveNoticeMessage = (
   const detail = i18n.params?.message
   const existingCore =
     notice.code === 'SERVICE_SIDECAR_FAILED' && typeof detail === 'string'
-      ? /process verge-mihomo(?:-alpha)?(?:\.exe)? \(PID (\d+)\) is still running; refusing a second core\s*$/.exec(
+      ? /process cvr-app-mihomo(?:-alpha)?(?:\.exe)? \(PID (\d+)\) is still running; refusing a second core\s*$/.exec(
           detail,
         )
       : null

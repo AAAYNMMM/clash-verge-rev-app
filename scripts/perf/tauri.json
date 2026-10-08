@@ -1,5 +1,5 @@
 {
-  "identifier": "io.github.clash-verge-rev.perf-harness",
+  "identifier": "io.github.aaaynmmm.clash-verge-rev-app.perf-harness",
   "build": {
     "frontendDist": "../target/perf/dist",
     "beforeBuildCommand": "",

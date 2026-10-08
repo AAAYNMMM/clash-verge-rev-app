@@ -1,5 +1,9 @@
-import { GitHub, HelpOutlineRounded, Telegram } from '@mui/icons-material'
-import { Box, ButtonGroup, IconButton, Grid } from '@mui/material'
+import {
+  GitHub,
+  HelpOutlineRounded,
+  BugReportOutlined,
+} from '@mui/icons-material'
+import { Alert, Box, ButtonGroup, IconButton, Grid } from '@mui/material'
 import { useLockFn } from 'ahooks'
 import { useTranslation } from 'react-i18next'
 
@@ -20,19 +24,21 @@ const SettingPage = () => {
   }
 
   const toGithubRepo = useLockFn(() =>
-    openExternalUrl('https://github.com/clash-verge-rev/clash-verge-rev').catch(
+    openExternalUrl('https://github.com/AAAYNMMM/clash-verge-rev-app').catch(
       onError,
     ),
   )
 
   const toGithubDoc = useLockFn(() =>
-    openExternalUrl('https://clash-verge-rev.github.io/index.html').catch(
-      onError,
-    ),
+    openExternalUrl(
+      'https://github.com/AAAYNMMM/clash-verge-rev-app#readme',
+    ).catch(onError),
   )
 
-  const toTelegramChannel = useLockFn(() =>
-    openExternalUrl('https://t.me/clash_verge_re').catch(onError),
+  const toIssueTracker = useLockFn(() =>
+    openExternalUrl(
+      'https://github.com/AAAYNMMM/clash-verge-rev-app/issues',
+    ).catch(onError),
   )
 
   const mode = useThemeMode()
@@ -57,10 +63,10 @@ const SettingPage = () => {
           <IconButton
             size="medium"
             color="inherit"
-            title={t('settings.page.actions.telegram')}
-            onClick={toTelegramChannel}
+            title={t('settings.page.actions.issues')}
+            onClick={toIssueTracker}
           >
-            <Telegram fontSize="inherit" />
+            <BugReportOutlined fontSize="inherit" />
           </IconButton>
 
           <IconButton
@@ -74,6 +80,9 @@ const SettingPage = () => {
         </ButtonGroup>
       }
     >
+      <Alert severity="info" sx={{ mb: 2 }}>
+        {t('settings.page.coexistence')}
+      </Alert>
       <Grid container spacing={1.5} columns={{ xs: 6, sm: 6, md: 12 }}>
         <Grid size={6}>
           <Box

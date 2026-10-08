@@ -2,11 +2,12 @@
   "page": {
     "actions": {
       "manual": "Manual",
-      "telegram": "Telegram Channel",
-      "github": "Github Repo"
+      "github": "Github Repo",
+      "issues": "Report an issue"
     },
     "actionsGroupLabel": "Settings links",
-    "title": "Settings"
+    "title": "Settings",
+    "coexistence": "This fork has independent installation, settings and services. System proxy and TUN change shared OS network settings; enable them in only one client at a time."
   },
   "sections": {
     "system": {
@@ -667,14 +668,14 @@
         "reinstallFailed": "Failed to reinstall the service",
         "repairFailed": "Failed to repair the service",
         "sidecarFailed": "Failed to continue with Sidecar",
-        "coreAlreadyRunning": "Could not start normal mode (Sidecar): another core is still running (PID {{pid}}). Exit other Clash Verge instances or the app using this core, then retry."
+        "coreAlreadyRunning": "Could not start normal mode (Sidecar): another core is still running (PID {{pid}}). Exit other Clash Verge Rev App instances or the app using this core, then retry."
       },
       "sysproxy": {
-        "privilegeRequired": "Cannot set the system proxy: macOS refused the change for lack of privileges. Install the Clash Verge service; an administrator can also turn off the administrator-password requirement for system-wide settings, in the advanced options of System Settings → Privacy & Security.",
+        "privilegeRequired": "Cannot set the system proxy: macOS refused the change for lack of privileges. Install the Clash Verge Rev App service; an administrator can also turn off the administrator-password requirement for system-wide settings, in the advanced options of System Settings → Privacy & Security.",
         "directFallback": "Failed to set the system proxy; traffic has been switched back to a direct connection.",
         "guardStopped": "The system proxy guard stopped after failing several times running. The system proxy is no longer being kept in place.",
-        "sidecarWhileServiceReady": "The system proxy could not be set because the core is still running as a Sidecar, although the Clash Verge service is ready. Restart the core to switch to service mode.",
-        "coreNotReady": "The system proxy could not be enabled because the core is not running. Start the core (or install/repair the Clash Verge service) and try again.",
+        "sidecarWhileServiceReady": "The system proxy could not be set because the core is still running as a Sidecar, although the Clash Verge Rev App service is ready. Restart the core to switch to service mode.",
+        "coreNotReady": "The system proxy could not be enabled because the core is not running. Start the core (or install/repair the Clash Verge Rev App service) and try again.",
         "systemCallFailed": "The system proxy could not be written because a Windows system call failed. This is usually transient, so try again."
       }
     },

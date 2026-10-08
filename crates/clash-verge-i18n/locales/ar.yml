@@ -12,10 +12,10 @@ notifications:
     'off': System proxy has been disabled.
   systemProxyFailed:
     title: وكيل النظام
-    body: تعذّر ضبط وكيل النظام. افتح Clash Verge لمعرفة السبب.
+    body: تعذّر ضبط وكيل النظام. افتح Clash Verge Rev App لمعرفة السبب.
   systemProxyGuardStopped:
     title: حارس وكيل النظام
-    body: توقف بعد عدة إخفاقات متتالية. افتح Clash Verge لمعرفة السبب.
+    body: توقف بعد عدة إخفاقات متتالية. افتح Clash Verge Rev App لمعرفة السبب.
   tunModeToggled:
     title: وضع TUN
     'on': TUN mode has been enabled.
@@ -28,15 +28,15 @@ notifications:
     body: تمت إعادة تفعيل الملف التعريفي.
   appQuit:
     title: على وشك الخروج
-    body: Clash Verge على وشك الخروج.
+    body: Clash Verge Rev App على وشك الخروج.
   updateReady:
-    title: Clash Verge Update
+    title: Clash Verge Rev App Update
     body: A new version (v{version}) has been downloaded and is ready to install.
     installNow: Install Now
     later: Later
 service:
-  adminInstallPrompt: يتطلب تثبيت خدمة Clash Verge صلاحيات المسؤول.
-  adminUninstallPrompt: يتطلب إلغاء تثبيت خدمة Clash Verge صلاحيات المسؤول.
+  adminInstallPrompt: يتطلب تثبيت خدمة Clash Verge Rev App صلاحيات المسؤول.
+  adminUninstallPrompt: يتطلب إلغاء تثبيت خدمة Clash Verge Rev App صلاحيات المسؤول.
 launchGuard:
   currentExeError: 'تعذر تحديد موقع التطبيق: {error}'
   homeDirError: 'تعذر تحديد المجلد الرئيسي للمستخدم الحالي. سيتم إنهاء التطبيق: {error}'

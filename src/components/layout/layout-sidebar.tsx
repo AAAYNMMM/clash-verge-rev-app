@@ -128,7 +128,7 @@ export const LayoutSidebar = (props: LayoutSidebarProps) => {
         <div
           data-tauri-drag-region="true"
           style={{
-            height: '27px',
+            height: '42px',
             display: 'flex',
             justifyContent: 'space-between',
           }}
@@ -136,9 +136,9 @@ export const LayoutSidebar = (props: LayoutSidebarProps) => {
           <SvgIcon
             component={isDark ? iconDark : iconLight}
             style={{
-              height: '36px',
-              width: '36px',
-              marginTop: '-3px',
+              height: '32px',
+              width: '32px',
+              marginTop: '5px',
               marginRight: '5px',
               marginLeft: '-3px',
             }}

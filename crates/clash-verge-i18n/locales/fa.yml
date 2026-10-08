@@ -12,10 +12,10 @@ notifications:
     'off': System proxy has been disabled.
   systemProxyFailed:
     title: پراکسی سیستم
-    body: تنظیم پراکسی سیستم ممکن نشد. برای دیدن دلیل، Clash Verge را باز کنید.
+    body: تنظیم پراکسی سیستم ممکن نشد. برای دیدن دلیل، Clash Verge Rev App را باز کنید.
   systemProxyGuardStopped:
     title: نگهبان پراکسی سیستم
-    body: پس از چند شکست پیاپی متوقف شد. برای دیدن دلیل، Clash Verge را باز کنید.
+    body: پس از چند شکست پیاپی متوقف شد. برای دیدن دلیل، Clash Verge Rev App را باز کنید.
   tunModeToggled:
     title: حالت TUN
     'on': TUN mode has been enabled.
@@ -28,15 +28,15 @@ notifications:
     body: پروفایل دوباره فعال شد.
   appQuit:
     title: در آستانه خروج
-    body: Clash Verge در آستانه خروج است.
+    body: Clash Verge Rev App در آستانه خروج است.
   updateReady:
-    title: Clash Verge Update
+    title: Clash Verge Rev App Update
     body: A new version (v{version}) has been downloaded and is ready to install.
     installNow: Install Now
     later: Later
 service:
-  adminInstallPrompt: نصب سرویس Clash Verge به دسترسی مدیر نیاز دارد.
-  adminUninstallPrompt: حذف سرویس Clash Verge به دسترسی مدیر نیاز دارد.
+  adminInstallPrompt: نصب سرویس Clash Verge Rev App به دسترسی مدیر نیاز دارد.
+  adminUninstallPrompt: حذف سرویس Clash Verge Rev App به دسترسی مدیر نیاز دارد.
 launchGuard:
   currentExeError: 'مکان برنامه مشخص نشد: {error}'
   homeDirError: 'پوشهٔ خانگی کاربر فعلی مشخص نشد. برنامه بسته خواهد شد: {error}'

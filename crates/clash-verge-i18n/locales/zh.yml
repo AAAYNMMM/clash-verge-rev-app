@@ -12,10 +12,10 @@ notifications:
     'off': 系统代理已禁用。
   systemProxyFailed:
     title: 系统代理
-    body: 系统代理设置失败。打开 Clash Verge 查看原因。
+    body: 系统代理设置失败。打开 Clash Verge Rev App 查看原因。
   systemProxyGuardStopped:
     title: 系统代理守卫
-    body: 连续多次失败后已停止守卫。打开 Clash Verge 查看原因。
+    body: 连续多次失败后已停止守卫。打开 Clash Verge Rev App 查看原因。
   tunModeToggled:
     title: TUN 模式
     'on': TUN 模式已开启。
@@ -28,15 +28,15 @@ notifications:
     body: 订阅已激活。
   appQuit:
     title: 即将退出
-    body: Clash Verge 即将退出。
+    body: Clash Verge Rev App 即将退出。
   updateReady:
-    title: Clash Verge 更新
+    title: Clash Verge Rev App 更新
     body: 新版本 (v{version}) 已下载完成，是否立即安装？
     installNow: 立即安装
     later: 稍后
 service:
-  adminInstallPrompt: 安装 Clash Verge 服务需要管理员权限
-  adminUninstallPrompt: 卸载 Clash Verge 服务需要管理员权限
+  adminInstallPrompt: 安装 Clash Verge Rev App 服务需要管理员权限
+  adminUninstallPrompt: 卸载 Clash Verge Rev App 服务需要管理员权限
 launchGuard:
   currentExeError: 无法确定应用位置：{error}
   homeDirError: 无法确定当前用户主目录，应用将退出：{error}

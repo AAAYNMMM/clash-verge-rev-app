@@ -47,13 +47,13 @@ execFileSync(
 )
 const mode = 'release + perf-harness (build settings hash recorded)'
 const buildCommand =
-  'TAURI_CONFIG=<scripts/perf/tauri.json> cargo build -p clash-verge --release --features perf-harness --locked --target-dir target/perf/cargo'
+  'TAURI_CONFIG=<scripts/perf/tauri.json> cargo build -p clash-verge-rev-app --release --features perf-harness --locked --target-dir target/perf/cargo'
 execFileSync(
   'cargo',
   [
     'build',
     '-p',
-    'clash-verge',
+    'clash-verge-rev-app',
     '--release',
     '--features',
     'perf-harness',
@@ -71,8 +71,8 @@ execFileSync(
 )
 if (before !== hash(source()))
   throw new Error('Source changed during build; refuse manifest')
-const binary = `${output}/clash-verge`
-copyFileSync('target/perf/cargo/release/clash-verge', binary)
+const binary = `${output}/clash-verge-rev-app`
+copyFileSync('target/perf/cargo/release/clash-verge-rev-app', binary)
 const files = command('find', ['target/perf/dist', '-type', 'f'])
   .split('\n')
   .sort()

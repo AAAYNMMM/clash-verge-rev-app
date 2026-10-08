@@ -2,11 +2,12 @@
   "page": {
     "actions": {
       "manual": "Bedienungsanleitung",
-      "telegram": "Telegram-Kanal",
-      "github": "GitHub-Projektadresse"
+      "github": "GitHub-Projektadresse",
+      "issues": "Report an issue"
     },
     "actionsGroupLabel": "Einstellungslinks",
-    "title": "Einstellungen"
+    "title": "Einstellungen",
+    "coexistence": "This fork has independent installation, settings and services. System proxy and TUN change shared OS network settings; enable them in only one client at a time."
   },
   "sections": {
     "system": {
@@ -667,14 +668,14 @@
         "reinstallFailed": "Dienst konnte nicht neu installiert werden",
         "repairFailed": "Dienst konnte nicht repariert werden",
         "sidecarFailed": "Fortsetzung mit Sidecar fehlgeschlagen",
-        "coreAlreadyRunning": "Der Sidecar-Modus konnte nicht gestartet werden: Ein anderer Kern läuft noch (PID {{pid}}). Beenden Sie andere Clash-Verge-Instanzen oder die App, die diesen Kern verwendet, und versuchen Sie es erneut."
+        "coreAlreadyRunning": "Der Sidecar-Modus konnte nicht gestartet werden: Ein anderer Kern läuft noch (PID {{pid}}). Beenden Sie andere Clash Verge Rev App-Instanzen oder die App, die diesen Kern verwendet, und versuchen Sie es erneut."
       },
       "sysproxy": {
-        "privilegeRequired": "Systemproxy kann nicht gesetzt werden: macOS hat die Änderung mangels Berechtigung abgelehnt. Installieren Sie den Clash-Verge-Dienst; als Administrator können Sie in den erweiterten Optionen unter Systemeinstellungen → Datenschutz & Sicherheit auch die Passwortpflicht für systemweite Einstellungen deaktivieren.",
+        "privilegeRequired": "Systemproxy kann nicht gesetzt werden: macOS hat die Änderung mangels Berechtigung abgelehnt. Installieren Sie den Clash Verge Rev App-Dienst; als Administrator können Sie in den erweiterten Optionen unter Systemeinstellungen → Datenschutz & Sicherheit auch die Passwortpflicht für systemweite Einstellungen deaktivieren.",
         "directFallback": "Systemproxy konnte nicht gesetzt werden; der Datenverkehr wurde auf eine direkte Verbindung zurückgesetzt.",
         "guardStopped": "Der Systemproxy-Wächter wurde nach mehreren Fehlversuchen in Folge gestoppt. Der Systemproxy wird nicht mehr automatisch aufrechterhalten.",
-        "sidecarWhileServiceReady": "Der Systemproxy konnte nicht gesetzt werden: Der Clash-Verge-Dienst ist bereit, der Kern läuft aber noch als Sidecar. Starten Sie den Kern neu, um in den Dienstmodus zu wechseln.",
-        "coreNotReady": "Der Systemproxy konnte nicht aktiviert werden, da der Kern nicht läuft. Starten Sie den Kern (oder installieren/reparieren Sie den Clash-Verge-Dienst) und versuchen Sie es erneut.",
+        "sidecarWhileServiceReady": "Der Systemproxy konnte nicht gesetzt werden: Der Clash Verge Rev App-Dienst ist bereit, der Kern läuft aber noch als Sidecar. Starten Sie den Kern neu, um in den Dienstmodus zu wechseln.",
+        "coreNotReady": "Der Systemproxy konnte nicht aktiviert werden, da der Kern nicht läuft. Starten Sie den Kern (oder installieren/reparieren Sie den Clash Verge Rev App-Dienst) und versuchen Sie es erneut.",
         "systemCallFailed": "Der Systemproxy konnte nicht geschrieben werden, da ein Windows-Systemaufruf fehlschlug. Das ist meist vorübergehend, versuchen Sie es erneut."
       }
     },

@@ -12,10 +12,10 @@ notifications:
     'off': System proxy has been disabled.
   systemProxyFailed:
     title: Система проксие
-    body: Система проксиен көйләп булмады. Сәбәбен күрер өчен Clash Verge'ны ачыгыз.
+    body: Система проксиен көйләп булмады. Сәбәбен күрер өчен Clash Verge Rev App'ны ачыгыз.
   systemProxyGuardStopped:
     title: Система проксие сакчысы
-    body: Берничә тапкыр рәттән уңышсыз булгач туктады. Сәбәбен күрер өчен Clash Verge'ны ачыгыз.
+    body: Берничә тапкыр рәттән уңышсыз булгач туктады. Сәбәбен күрер өчен Clash Verge Rev App'ны ачыгыз.
   tunModeToggled:
     title: TUN режимы
     'on': TUN mode has been enabled.
@@ -28,15 +28,15 @@ notifications:
     body: Профиль яңадан активлаштырылды.
   appQuit:
     title: Чыгар алдыннан
-    body: Clash Verge чыгарга җыена.
+    body: Clash Verge Rev App чыгарга җыена.
   updateReady:
-    title: Clash Verge Update
+    title: Clash Verge Rev App Update
     body: A new version (v{version}) has been downloaded and is ready to install.
     installNow: Install Now
     later: Later
 service:
-  adminInstallPrompt: Clash Verge хезмәтен урнаштыру өчен администратор хокуклары кирәк.
-  adminUninstallPrompt: Clash Verge хезмәтен бетерү өчен администратор хокуклары кирәк.
+  adminInstallPrompt: Clash Verge Rev App хезмәтен урнаштыру өчен администратор хокуклары кирәк.
+  adminUninstallPrompt: Clash Verge Rev App хезмәтен бетерү өчен администратор хокуклары кирәк.
 launchGuard:
   currentExeError: 'Кушымтаның урнашу урынын билгеләп булмады: {error}'
   homeDirError: 'Хәзерге кулланучының өй каталогын билгеләп булмады. Кушымта ябылачак: {error}'

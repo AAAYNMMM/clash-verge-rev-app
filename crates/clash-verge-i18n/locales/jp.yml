@@ -12,10 +12,10 @@ notifications:
     'off': System proxy has been disabled.
   systemProxyFailed:
     title: システムプロキシ
-    body: システムプロキシを設定できませんでした。理由は Clash Verge を開いて確認してください。
+    body: システムプロキシを設定できませんでした。理由は Clash Verge Rev App を開いて確認してください。
   systemProxyGuardStopped:
     title: システムプロキシガード
-    body: 連続して失敗したため停止しました。理由は Clash Verge を開いて確認してください。
+    body: 連続して失敗したため停止しました。理由は Clash Verge Rev App を開いて確認してください。
   tunModeToggled:
     title: TUN モード
     'on': TUN mode has been enabled.
@@ -28,15 +28,15 @@ notifications:
     body: プロファイルが再有効化されました。
   appQuit:
     title: 終了間近
-    body: Clash Verge はまもなく終了します。
+    body: Clash Verge Rev App はまもなく終了します。
   updateReady:
-    title: Clash Verge Update
+    title: Clash Verge Rev App Update
     body: A new version (v{version}) has been downloaded and is ready to install.
     installNow: Install Now
     later: Later
 service:
-  adminInstallPrompt: Clash Verge サービスのインストールには管理者権限が必要です。
-  adminUninstallPrompt: Clash Verge サービスのアンインストールには管理者権限が必要です。
+  adminInstallPrompt: Clash Verge Rev App サービスのインストールには管理者権限が必要です。
+  adminUninstallPrompt: Clash Verge Rev App サービスのアンインストールには管理者権限が必要です。
 launchGuard:
   currentExeError: アプリケーションの場所を確認できませんでした：{error}
   homeDirError: 現在のユーザーのホームディレクトリを確認できないため、アプリケーションを終了します：{error}

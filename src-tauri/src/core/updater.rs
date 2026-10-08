@@ -516,7 +516,7 @@ impl SilentUpdater {
         use tauri::{WebviewUrl, WebviewWindowBuilder};
 
         let window = match WebviewWindowBuilder::new(app_handle, "update-splash", WebviewUrl::App("index.html".into()))
-            .title("Clash Verge - Updating")
+            .title("Clash Verge Rev App - Updating")
             .inner_size(300.0, 180.0)
             .resizable(false)
             .maximizable(false)

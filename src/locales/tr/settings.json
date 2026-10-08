@@ -2,11 +2,12 @@
   "page": {
     "actions": {
       "manual": "Kılavuz",
-      "telegram": "Telegram Kanalı",
-      "github": "GitHub Deposu"
+      "github": "GitHub Deposu",
+      "issues": "Report an issue"
     },
     "actionsGroupLabel": "Ayar bağlantıları",
-    "title": "Ayarlar"
+    "title": "Ayarlar",
+    "coexistence": "This fork has independent installation, settings and services. System proxy and TUN change shared OS network settings; enable them in only one client at a time."
   },
   "sections": {
     "system": {
@@ -667,14 +668,14 @@
         "reinstallFailed": "Hizmet yeniden kurulamadı",
         "repairFailed": "Hizmet onarılamadı",
         "sidecarFailed": "Sidecar ile devam edilemedi",
-        "coreAlreadyRunning": "Sidecar modu başlatılamadı: başka bir çekirdek hâlâ çalışıyor (PID {{pid}}). Diğer Clash Verge örneklerini veya bu çekirdeği kullanan uygulamayı kapatıp yeniden deneyin."
+        "coreAlreadyRunning": "Sidecar modu başlatılamadı: başka bir çekirdek hâlâ çalışıyor (PID {{pid}}). Diğer Clash Verge Rev App örneklerini veya bu çekirdeği kullanan uygulamayı kapatıp yeniden deneyin."
       },
       "sysproxy": {
-        "privilegeRequired": "Sistem vekil sunucusu ayarlanamıyor: macOS yetki yetersizliği nedeniyle değişikliği reddetti. Clash Verge hizmetini kurun; yöneticiyseniz Sistem Ayarları → Gizlilik ve Güvenlik bölümündeki gelişmiş seçeneklerden, sistem genelindeki ayarlar için yönetici parolası zorunluluğunu da kapatabilirsiniz.",
+        "privilegeRequired": "Sistem vekil sunucusu ayarlanamıyor: macOS yetki yetersizliği nedeniyle değişikliği reddetti. Clash Verge Rev App hizmetini kurun; yöneticiyseniz Sistem Ayarları → Gizlilik ve Güvenlik bölümündeki gelişmiş seçeneklerden, sistem genelindeki ayarlar için yönetici parolası zorunluluğunu da kapatabilirsiniz.",
         "directFallback": "Sistem vekil sunucusu ayarlanamadı; trafik doğrudan bağlantıya geri döndürüldü.",
         "guardStopped": "Sistem vekil sunucusu koruması art arda birkaç başarısızlıktan sonra durdu. Sistem vekil sunucusu artık otomatik olarak korunmuyor.",
-        "sidecarWhileServiceReady": "Sistem vekil sunucusu ayarlanamadı: Clash Verge hizmeti hazır ancak çekirdek hâlâ Sidecar olarak çalışıyor. Hizmet moduna geçmek için çekirdeği yeniden başlatın.",
-        "coreNotReady": "Çekirdek çalışmadığı için sistem vekil sunucusu etkinleştirilemedi. Çekirdeği başlatın (veya Clash Verge hizmetini kurun/onarın) ve yeniden deneyin.",
+        "sidecarWhileServiceReady": "Sistem vekil sunucusu ayarlanamadı: Clash Verge Rev App hizmeti hazır ancak çekirdek hâlâ Sidecar olarak çalışıyor. Hizmet moduna geçmek için çekirdeği yeniden başlatın.",
+        "coreNotReady": "Çekirdek çalışmadığı için sistem vekil sunucusu etkinleştirilemedi. Çekirdeği başlatın (veya Clash Verge Rev App hizmetini kurun/onarın) ve yeniden deneyin.",
         "systemCallFailed": "Bir Windows sistem çağrısı başarısız olduğu için sistem vekil sunucusu yazılamadı. Bu genellikle geçicidir, yeniden deneyin."
       }
     },

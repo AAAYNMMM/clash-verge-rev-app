@@ -550,51 +550,51 @@ FunctionEnd
 
 
 !macro CheckAllVergeProcesses
-  ; Check if clash-verge-service.exe is running
+  ; Check if cvr-app-service.exe is running
   !if "${INSTALLMODE}" == "currentUser"
-    nsis_tauri_utils::FindProcessCurrentUser "clash-verge-service.exe"
+    nsis_tauri_utils::FindProcessCurrentUser "cvr-app-service.exe"
   !else
-    nsis_tauri_utils::FindProcess "clash-verge-service.exe"
+    nsis_tauri_utils::FindProcess "cvr-app-service.exe"
   !endif
   Pop $R0
   ${If} $R0 = 0
-    DetailPrint "Kill clash-verge-service.exe..."
+    DetailPrint "Kill cvr-app-service.exe..."
     !if "${INSTALLMODE}" == "currentUser"
-      nsis_tauri_utils::KillProcessCurrentUser "clash-verge-service.exe"
+      nsis_tauri_utils::KillProcessCurrentUser "cvr-app-service.exe"
     !else
-      nsis_tauri_utils::KillProcess "clash-verge-service.exe"
+      nsis_tauri_utils::KillProcess "cvr-app-service.exe"
     !endif
   ${EndIf}
 
-  ; Check if verge-mihomo-alpha.exe is running
+  ; Check if cvr-app-mihomo-alpha.exe is running
   !if "${INSTALLMODE}" == "currentUser"
-    nsis_tauri_utils::FindProcessCurrentUser "verge-mihomo-alpha.exe"
+    nsis_tauri_utils::FindProcessCurrentUser "cvr-app-mihomo-alpha.exe"
   !else
-    nsis_tauri_utils::FindProcess "verge-mihomo-alpha.exe"
+    nsis_tauri_utils::FindProcess "cvr-app-mihomo-alpha.exe"
   !endif
   Pop $R0
   ${If} $R0 = 0
-    DetailPrint "Kill verge-mihomo-alpha.exe..."
+    DetailPrint "Kill cvr-app-mihomo-alpha.exe..."
     !if "${INSTALLMODE}" == "currentUser"
-      nsis_tauri_utils::KillProcessCurrentUser "verge-mihomo-alpha.exe"
+      nsis_tauri_utils::KillProcessCurrentUser "cvr-app-mihomo-alpha.exe"
     !else
-      nsis_tauri_utils::KillProcess "verge-mihomo-alpha.exe"
+      nsis_tauri_utils::KillProcess "cvr-app-mihomo-alpha.exe"
     !endif
   ${EndIf}
 
-  ; Check if verge-mihomo.exe is running
+  ; Check if cvr-app-mihomo.exe is running
   !if "${INSTALLMODE}" == "currentUser"
-    nsis_tauri_utils::FindProcessCurrentUser "verge-mihomo.exe"
+    nsis_tauri_utils::FindProcessCurrentUser "cvr-app-mihomo.exe"
   !else
-    nsis_tauri_utils::FindProcess "verge-mihomo.exe"
+    nsis_tauri_utils::FindProcess "cvr-app-mihomo.exe"
   !endif
   Pop $R0
   ${If} $R0 = 0
-    DetailPrint "Kill verge-mihomo.exe..."
+    DetailPrint "Kill cvr-app-mihomo.exe..."
     !if "${INSTALLMODE}" == "currentUser"
-      nsis_tauri_utils::KillProcessCurrentUser "verge-mihomo.exe"
+      nsis_tauri_utils::KillProcessCurrentUser "cvr-app-mihomo.exe"
     !else
-      nsis_tauri_utils::KillProcess "verge-mihomo.exe"
+      nsis_tauri_utils::KillProcess "cvr-app-mihomo.exe"
     !endif
   ${EndIf}
 
@@ -633,20 +633,20 @@ FunctionEnd
 
 !macro StartVergeService
   ; Check if the service exists
-  SimpleSC::ExistsService "clash_verge_service"
+  SimpleSC::ExistsService "clash_verge_rev_app_service"
   Pop $0  ; 0: service exists; other: service not exists
   ; Service exists
   ${If} $0 == 0
     Push $0
     ; Check if the service is running
-    SimpleSC::ServiceIsRunning "clash_verge_service"
+    SimpleSC::ServiceIsRunning "clash_verge_rev_app_service"
     Pop $0 ; returns an errorcode (<>0) otherwise success (0)
     Pop $1 ; returns 1 (service is running) - returns 0 (service is not running)
     ${If} $0 == 0
       Push $0
       ${If} $1 == 0
         DetailPrint "Restart ${PRODUCTNAME} Service..."
-        SimpleSC::StartService "clash_verge_service" "" 30
+        SimpleSC::StartService "clash_verge_rev_app_service" "" 30
       ${EndIf}
     ${ElseIf} $0 != 0
       Push $0
@@ -659,24 +659,24 @@ FunctionEnd
 
 !macro RemoveVergeService
   ; Check if the service exists
-  SimpleSC::ExistsService "clash_verge_service"
+  SimpleSC::ExistsService "clash_verge_rev_app_service"
   Pop $0  ; 0: service exists; other: service not exists
   ; Service exists
   ${If} $0 == 0
     Push $0
     ; Check if the service is running
-    SimpleSC::ServiceIsRunning "clash_verge_service"
+    SimpleSC::ServiceIsRunning "clash_verge_rev_app_service"
     Pop $0 ; returns an errorcode (<>0) otherwise success (0)
     Pop $1 ; returns 1 (service is running) - returns 0 (service is not running)
     ${If} $0 == 0
       Push $0
       ${If} $1 == 1
         DetailPrint "Stop ${PRODUCTNAME} Service..."
-        SimpleSC::StopService "clash_verge_service" 1 30
+        SimpleSC::StopService "clash_verge_rev_app_service" 1 30
         Pop $0 ; returns an errorcode (<>0) otherwise success (0)
         ${If} $0 == 0
           DetailPrint "Removing ${PRODUCTNAME} Service..."
-          SimpleSC::RemoveService "clash_verge_service"
+          SimpleSC::RemoveService "clash_verge_rev_app_service"
         ${ElseIf} $0 != 0
           Push $0
           SimpleSC::GetErrorMessage
@@ -685,7 +685,7 @@ FunctionEnd
         ${EndIf}
       ${ElseIf} $1 == 0
         DetailPrint "Removing ${PRODUCTNAME} Service..."
-        SimpleSC::RemoveService "clash_verge_service"
+        SimpleSC::RemoveService "clash_verge_rev_app_service"
       ${EndIf}
     ${ElseIf} $0 != 0
       Push $0
@@ -893,13 +893,19 @@ Section WebView2
 SectionEnd
 
 Section Install
+  ; A user-selected upstream directory would share uninstall.exe even with a new product name.
+  IfFileExists "$INSTDIR\clash-verge.exe" RejectUpstreamDirectory
+  IfFileExists "$INSTDIR\Clash Verge.exe" RejectUpstreamDirectory IndependentDirectory
+  RejectUpstreamDirectory:
+    MessageBox MB_ICONSTOP|MB_OK "Choose a separate installation folder for Clash Verge Rev App. The selected folder contains the original Clash Verge."
+    Abort
+  IndependentDirectory:
   SetOutPath $INSTDIR
 
   !ifmacrodef NSIS_HOOK_PREINSTALL
     !insertmacro NSIS_HOOK_PREINSTALL
   !endif
 
-  nsExec::Exec 'netsh int tcp res'
 
   !include "Win\RestartManager.nsh"
   !insertmacro CheckIfAppIsRunning "${MAINBINARYNAME}.exe" "${PRODUCTNAME}"
@@ -916,33 +922,8 @@ Section Install
 
   ; Remove stale window-state files
   DetailPrint "Removing window-state.json / .window-state.json"
-  Delete "$APPDATA\io.github.clash-verge-rev.clash-verge-rev\window-state.json"
-  Delete "$APPDATA\io.github.clash-verge-rev.clash-verge-rev\.window-state.json"
-
-  ; Clean legacy auto-launch registry entries
-  StrCpy $R1 "Software\Microsoft\Windows\CurrentVersion\Run"
-
-  SetRegView 64
-  ReadRegStr $R2 HKCU "$R1" "Clash Verge"
-  ${If} $R2 != ""
-    DeleteRegValue HKCU "$R1" "Clash Verge"
-  ${EndIf}
-  ReadRegStr $R2 HKLM "$R1" "Clash Verge"
-  ${If} $R2 != ""
-    DeleteRegValue HKLM "$R1" "Clash Verge"
-  ${EndIf}
-  ReadRegStr $R2 HKCU "$R1" "clash-verge"
-  ${If} $R2 != ""
-    DeleteRegValue HKCU "$R1" "clash-verge"
-  ${EndIf}
-  ReadRegStr $R2 HKLM "$R1" "clash-verge"
-  ${If} $R2 != ""
-    DeleteRegValue HKLM "$R1" "clash-verge"
-  ${EndIf}
-
-  ; Remove legacy executables
-  IfFileExists "$INSTDIR\Clash Verge.exe" 0 +2
-    Delete "$INSTDIR\Clash Verge.exe"
+  Delete "$APPDATA\io.github.aaaynmmm.clash-verge-rev-app\window-state.json"
+  Delete "$APPDATA\io.github.aaaynmmm.clash-verge-rev-app\.window-state.json"
 
   !insertmacro SetContext
 
@@ -968,16 +949,16 @@ Section Install
   ; exactly the bytes this installer unpacked: a core swapped on disk is refused, not published.
   ; Not fatal on failure; a later elevated service install can stage the cores again.
   !ifdef MIHOMO_SHA256
-    DetailPrint "Staging verge-mihomo for ${PRODUCTNAME} Service..."
-    nsExec::ExecToLog '"$INSTDIR\resources\clash-verge-service-install.exe" --install-core "$INSTDIR\verge-mihomo.exe" --sha256 "${MIHOMO_SHA256}"'
+    DetailPrint "Staging cvr-app-mihomo for ${PRODUCTNAME} Service..."
+    nsExec::ExecToLog '"$INSTDIR\resources\cvr-app-service-install.exe" --install-core "$INSTDIR\cvr-app-mihomo.exe" --sha256 "${MIHOMO_SHA256}"'
     Pop $0
-    ${IfThen} $0 != 0 ${|} DetailPrint "Staging verge-mihomo returned $0" ${|}
+    ${IfThen} $0 != 0 ${|} DetailPrint "Staging cvr-app-mihomo returned $0" ${|}
   !endif
   !ifdef MIHOMO_ALPHA_SHA256
-    DetailPrint "Staging verge-mihomo-alpha for ${PRODUCTNAME} Service..."
-    nsExec::ExecToLog '"$INSTDIR\resources\clash-verge-service-install.exe" --install-core "$INSTDIR\verge-mihomo-alpha.exe" --sha256 "${MIHOMO_ALPHA_SHA256}"'
+    DetailPrint "Staging cvr-app-mihomo-alpha for ${PRODUCTNAME} Service..."
+    nsExec::ExecToLog '"$INSTDIR\resources\cvr-app-service-install.exe" --install-core "$INSTDIR\cvr-app-mihomo-alpha.exe" --sha256 "${MIHOMO_ALPHA_SHA256}"'
     Pop $0
-    ${IfThen} $0 != 0 ${|} DetailPrint "Staging verge-mihomo-alpha returned $0" ${|}
+    ${IfThen} $0 != 0 ${|} DetailPrint "Staging cvr-app-mihomo-alpha returned $0" ${|}
   !endif
 
   !insertmacro StartVergeService
@@ -1108,33 +1089,8 @@ Section Uninstall
   ; Remove cached window state files
   DetailPrint "Removing window-state.json / .window-state.json"
   SetShellVarContext current
-  Delete "$APPDATA\io.github.clash-verge-rev.clash-verge-rev\window-state.json"
-  Delete "$APPDATA\io.github.clash-verge-rev.clash-verge-rev\.window-state.json"
-
-  ; Clean legacy auto-launch registry entries
-  StrCpy $R1 "Software\Microsoft\Windows\CurrentVersion\Run"
-
-  SetRegView 64
-  ReadRegStr $R2 HKCU "$R1" "Clash Verge"
-  ${If} $R2 != ""
-    DeleteRegValue HKCU "$R1" "Clash Verge"
-  ${EndIf}
-  ReadRegStr $R2 HKLM "$R1" "Clash Verge"
-  ${If} $R2 != ""
-    DeleteRegValue HKLM "$R1" "Clash Verge"
-  ${EndIf}
-  ReadRegStr $R2 HKCU "$R1" "clash-verge"
-  ${If} $R2 != ""
-    DeleteRegValue HKCU "$R1" "clash-verge"
-  ${EndIf}
-  ReadRegStr $R2 HKLM "$R1" "clash-verge"
-  ${If} $R2 != ""
-    DeleteRegValue HKLM "$R1" "clash-verge"
-  ${EndIf}
-
-  ; Remove legacy executables
-  IfFileExists "$INSTDIR\Clash Verge.exe" 0 +2
-    Delete "$INSTDIR\Clash Verge.exe"
+  Delete "$APPDATA\io.github.aaaynmmm.clash-verge-rev-app\window-state.json"
+  Delete "$APPDATA\io.github.aaaynmmm.clash-verge-rev-app\.window-state.json"
 
   !insertmacro SetContext
 
@@ -1153,8 +1109,8 @@ Section Uninstall
   {{/each}}
 
   ; A failed core upgrade leaves the displaced binary behind; it is never user data.
-  Delete "$INSTDIR\verge-mihomo.old"
-  Delete "$INSTDIR\verge-mihomo-alpha.old"
+  Delete "$INSTDIR\cvr-app-mihomo.old"
+  Delete "$INSTDIR\cvr-app-mihomo-alpha.old"
 
   ; Delete app associations
   {{#each file_associations as |association| ~}}
@@ -1208,65 +1164,7 @@ Section Uninstall
       Delete "$DESKTOP\${PRODUCTNAME}.lnk"
     ${EndIf}
 
-    ; Remove legacy public desktop shortcuts
-    Delete "C:\Users\Public\Desktop\Clash Verge.lnk"
-    Delete "C:\Users\Public\Desktop\clash-verge.lnk"
 
-    ; Remove legacy shortcuts from all user desktops
-    DetailPrint "Removing ${PRODUCTNAME} shortcuts from all user desktops..."
-    SetRegView 64
-    StrCpy $R1 0
-    LegacyUserLoop:
-      EnumRegKey $R2 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList" $R1
-      ${If} $R2 == ""
-        Goto LegacyUserDone
-      ${EndIf}
-      ReadRegStr $R3 HKLM "SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList\$R2" "ProfileImagePath"
-      ${If} $R3 != ""
-        StrCpy $R4 "$R3\Desktop"
-        Delete "$R4\Clash Verge.lnk"
-        Delete "$R4\clash-verge.lnk"
-      ${EndIf}
-      IntOp $R1 $R1 + 1
-      Goto LegacyUserLoop
-    LegacyUserDone:
-    !insertmacro SetContext
-
-    ; Remove legacy start menu folders
-    SetShellVarContext current
-    RMDir /r /REBOOTOK "$SMPROGRAMS\Clash Verge"
-    RMDir /r /REBOOTOK "$SMPROGRAMS\clash-verge"
-    !insertmacro SetContext
-    RMDir /r /REBOOTOK "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Clash Verge"
-    RMDir /r /REBOOTOK "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\clash-verge"
-
-    ; Clean legacy registry keys
-    SetRegView 64
-    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\Clash Verge.exe"
-    DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\clash-verge.exe"
-    DeleteRegKey HKLM "Software\Clash Verge Rev"
-    DeleteRegKey HKLM "Software\Clash Verge"
-    DeleteRegKey HKCU "Software\Clash Verge Rev"
-    DeleteRegKey HKCU "Software\Clash Verge"
-    DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\ClashVerge"
-    DeleteRegKey HKCU "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Clash Verge"
-
-    StrCpy $R1 0
-    LegacyUninstallLoop:
-      EnumRegKey $R2 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall" $R1
-      ${If} $R2 == ""
-        Goto LegacyUninstallDone
-      ${EndIf}
-      ReadRegStr $R3 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$R2" "DisplayName"
-      ${If} $R3 != ""
-        StrCmp $R3 "Clash Verge" 0 +3
-        StrCmp $R3 "clash-verge" 0 +2
-        DeleteRegKey HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\$R2"
-      ${EndIf}
-      IntOp $R1 $R1 + 1
-      Goto LegacyUninstallLoop
-    LegacyUninstallDone:
-    !insertmacro SetContext
   ${EndIf}
 
   ; Remove registry information for add/remove programs
@@ -1284,6 +1182,10 @@ Section Uninstall
   ; We do this when not updating (to preserve the registry value on updates)
   ${If} $UpdateMode <> 1
     DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "${PRODUCTNAME}"
+    nsExec::ExecToLog 'schtasks /Delete /TN "Clash Verge Rev App" /F'
+    Pop $0
+    nsExec::ExecToLog 'schtasks /Delete /TN "Clash Verge Rev App (Admin)" /F'
+    Pop $0
   ${EndIf}
 
   ; Delete app data if the checkbox is selected

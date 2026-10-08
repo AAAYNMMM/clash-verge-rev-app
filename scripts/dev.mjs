@@ -323,7 +323,7 @@ export async function runDevCommand(mode, dependencies = {}) {
     }
     recordPath = join(
       environment.HOME,
-      'Library/Application Support/io.github.clash-verge-rev.clash-verge-rev.dev/singleton-instance.json',
+      'Library/Application Support/io.github.aaaynmmm.clash-verge-rev-app.dev/singleton-instance.json',
     )
     const installSigint = dependencies.installSigint ?? defaultInstallSigint
     removeSigint = installSigint(() => dispatchSigint()) ?? (() => {})

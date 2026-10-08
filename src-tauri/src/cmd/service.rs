@@ -171,7 +171,7 @@ mod tests {
                         service_sha256: String::new(),
                         protocol: ProtocolInfo::current(),
                         cores: vec![CoreInspection {
-                            name: "verge-mihomo.exe".into(),
+                            name: "cvr-app-mihomo.exe".into(),
                             availability,
                         }],
                         core_busy: false,
@@ -192,7 +192,7 @@ mod tests {
                 assert_eq!(
                     result,
                     Ok(ServiceInstallOutcome::Sidecar {
-                        reason: format!("verge-mihomo.exe: {reason}")
+                        reason: format!("cvr-app-mihomo.exe: {reason}")
                     })
                 );
             } else {

@@ -4,7 +4,7 @@ import path from 'node:path'
 
 /**
  * Regenerates src/services/contract.ts from the backend wire contract.
- * Source of truth: `cargo run -p clash-verge --bin frontend-contract` inside
+ * Source of truth: `cargo run -p clash-verge-rev-app --bin frontend-contract` inside
  * src-tauri, which serializes the same enum variants and event payloads the
  * app emits at runtime. CI reruns this and fails on a non-empty diff.
  */
@@ -15,7 +15,7 @@ const OUT = path.join(ROOT, 'src/services/contract.ts')
 const contract = JSON.parse(
   execFileSync(
     'cargo',
-    ['run', '-p', 'clash-verge', '--bin', 'frontend-contract', '-q'],
+    ['run', '-p', 'clash-verge-rev-app', '--bin', 'frontend-contract', '-q'],
     {
       cwd: path.join(ROOT, 'src-tauri'),
       encoding: 'utf8',

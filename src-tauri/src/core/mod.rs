@@ -24,3 +24,5 @@ pub mod win_uwp;
 
 pub use self::{manager::CoreManager, timer::Timer, updater::SilentUpdater};
 pub use notify::{handle, notification};
+
+pub(super) mod proxy_ownership;

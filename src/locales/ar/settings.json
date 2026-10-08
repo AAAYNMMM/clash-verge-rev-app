@@ -2,11 +2,12 @@
   "page": {
     "actions": {
       "manual": "دليل",
-      "telegram": "قناة تيليجرام",
-      "github": "مستودع Github"
+      "github": "مستودع Github",
+      "issues": "Report an issue"
     },
     "actionsGroupLabel": "روابط الإعدادات",
-    "title": "الإعدادات"
+    "title": "الإعدادات",
+    "coexistence": "This fork has independent installation, settings and services. System proxy and TUN change shared OS network settings; enable them in only one client at a time."
   },
   "sections": {
     "system": {
@@ -667,14 +668,14 @@
         "reinstallFailed": "تعذّر إعادة تثبيت الخدمة",
         "repairFailed": "تعذّر إصلاح الخدمة",
         "sidecarFailed": "تعذّر المتابعة باستخدام Sidecar",
-        "coreAlreadyRunning": "تعذّر بدء وضع Sidecar: لا تزال نواة أخرى قيد التشغيل (PID {{pid}}). أغلق نسخ Clash Verge الأخرى أو التطبيق الذي يستخدم هذه النواة، ثم أعد المحاولة."
+        "coreAlreadyRunning": "تعذّر بدء وضع Sidecar: لا تزال نواة أخرى قيد التشغيل (PID {{pid}}). أغلق نسخ Clash Verge Rev App الأخرى أو التطبيق الذي يستخدم هذه النواة، ثم أعد المحاولة."
       },
       "sysproxy": {
-        "privilegeRequired": "تعذّر ضبط وكيل النظام: رفض macOS التغيير لعدم كفاية الصلاحيات. ثبّت خدمة Clash Verge؛ وإن كنت مسؤولًا فيمكنك أيضًا إيقاف اشتراط كلمة سر المسؤول للإعدادات على مستوى النظام من الخيارات المتقدمة في إعدادات النظام ← الخصوصية والأمان.",
+        "privilegeRequired": "تعذّر ضبط وكيل النظام: رفض macOS التغيير لعدم كفاية الصلاحيات. ثبّت خدمة Clash Verge Rev App؛ وإن كنت مسؤولًا فيمكنك أيضًا إيقاف اشتراط كلمة سر المسؤول للإعدادات على مستوى النظام من الخيارات المتقدمة في إعدادات النظام ← الخصوصية والأمان.",
         "directFallback": "تعذّر ضبط وكيل النظام؛ تمت إعادة حركة البيانات إلى اتصال مباشر.",
         "guardStopped": "توقف حارس وكيل النظام بعد عدة إخفاقات متتالية. لم يعد وكيل النظام يُحفَظ تلقائيًا.",
-        "sidecarWhileServiceReady": "تعذّر ضبط وكيل النظام: خدمة Clash Verge جاهزة لكن النواة ما زالت تعمل بوضع Sidecar. أعد تشغيل النواة للتبديل إلى وضع الخدمة.",
-        "coreNotReady": "تعذّر تفعيل وكيل النظام لأن النواة لا تعمل. شغّل النواة (أو ثبّت/أصلح خدمة Clash Verge) ثم أعد المحاولة.",
+        "sidecarWhileServiceReady": "تعذّر ضبط وكيل النظام: خدمة Clash Verge Rev App جاهزة لكن النواة ما زالت تعمل بوضع Sidecar. أعد تشغيل النواة للتبديل إلى وضع الخدمة.",
+        "coreNotReady": "تعذّر تفعيل وكيل النظام لأن النواة لا تعمل. شغّل النواة (أو ثبّت/أصلح خدمة Clash Verge Rev App) ثم أعد المحاولة.",
         "systemCallFailed": "تعذّرت كتابة وكيل النظام لأن استدعاء نظام Windows أخفق. عادةً ما يكون هذا عارضًا، فأعد المحاولة."
       }
     },

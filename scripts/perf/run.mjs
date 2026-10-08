@@ -35,7 +35,10 @@ const { values } = parseArgs({
   args: process.argv.slice(2).filter((v) => v !== '--'),
   options: {
     output: { type: 'string', default: `target/perf/runs/${Date.now()}` },
-    binary: { type: 'string', default: 'target/perf/build/clash-verge' },
+    binary: {
+      type: 'string',
+      default: 'target/perf/build/clash-verge-rev-app',
+    },
     repeat: { type: 'string', default: '3' },
     seconds: { type: 'string', default: '20' },
     warmup: { type: 'string', default: '10' },

@@ -2,11 +2,12 @@
   "page": {
     "actions": {
       "manual": "マニュアル",
-      "telegram": "Telegramチャンネル",
-      "github": "GitHubリポジトリ"
+      "github": "GitHubリポジトリ",
+      "issues": "Report an issue"
     },
     "actionsGroupLabel": "設定リンク",
-    "title": "設定"
+    "title": "設定",
+    "coexistence": "This fork has independent installation, settings and services. System proxy and TUN change shared OS network settings; enable them in only one client at a time."
   },
   "sections": {
     "system": {
@@ -667,14 +668,14 @@
         "reinstallFailed": "サービスの再インストールに失敗しました",
         "repairFailed": "サービスの修復に失敗しました",
         "sidecarFailed": "Sidecar での続行に失敗しました",
-        "coreAlreadyRunning": "通常モード（Sidecar）を開始できません：別のコアが実行中です（PID {{pid}}）。他の Clash Verge またはこのコアを使用しているアプリを終了してから、再試行してください。"
+        "coreAlreadyRunning": "通常モード（Sidecar）を開始できません：別のコアが実行中です（PID {{pid}}）。他の Clash Verge Rev App またはこのコアを使用しているアプリを終了してから、再試行してください。"
       },
       "sysproxy": {
-        "privilegeRequired": "システムプロキシを設定できません: 権限が不足しているため macOS が変更を拒否しました。Clash Verge サービスをインストールしてください。管理者であれば、システム設定 → プライバシーとセキュリティの詳細オプションで、システム全体の設定に管理者パスワードを要求する設定をオフにすることもできます。",
+        "privilegeRequired": "システムプロキシを設定できません: 権限が不足しているため macOS が変更を拒否しました。Clash Verge Rev App サービスをインストールしてください。管理者であれば、システム設定 → プライバシーとセキュリティの詳細オプションで、システム全体の設定に管理者パスワードを要求する設定をオフにすることもできます。",
         "directFallback": "システムプロキシの設定に失敗したため、直接接続に戻しました。",
         "guardStopped": "システムプロキシガードが連続して失敗したため停止しました。システムプロキシは自動的に維持されなくなりました。",
-        "sidecarWhileServiceReady": "システムプロキシを設定できませんでした: Clash Verge サービスは準備できていますが、コアはまだ Sidecar で動作しています。コアを再起動するとサービスモードに切り替わります。",
-        "coreNotReady": "コアが実行されていないため、システムプロキシを有効にできませんでした。コアを起動する（または Clash Verge サービスをインストール／修復する）してから再試行してください。",
+        "sidecarWhileServiceReady": "システムプロキシを設定できませんでした: Clash Verge Rev App サービスは準備できていますが、コアはまだ Sidecar で動作しています。コアを再起動するとサービスモードに切り替わります。",
+        "coreNotReady": "コアが実行されていないため、システムプロキシを有効にできませんでした。コアを起動する（または Clash Verge Rev App サービスをインストール／修復する）してから再試行してください。",
         "systemCallFailed": "Windows のシステムコールが失敗したため、システムプロキシを書き込めませんでした。多くは一時的な問題です。再試行してください。"
       }
     },

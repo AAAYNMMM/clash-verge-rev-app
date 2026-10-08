@@ -2,11 +2,12 @@
   "page": {
     "actions": {
       "manual": "Manual",
-      "telegram": "Canal do Telegram",
-      "github": "Repositório do Github"
+      "github": "Repositório do Github",
+      "issues": "Report an issue"
     },
     "actionsGroupLabel": "Links das configurações",
-    "title": "Configurações"
+    "title": "Configurações",
+    "coexistence": "This fork has independent installation, settings and services. System proxy and TUN change shared OS network settings; enable them in only one client at a time."
   },
   "sections": {
     "system": {
@@ -667,14 +668,14 @@
         "reinstallFailed": "Falha ao reinstalar o serviço",
         "repairFailed": "Falha ao reparar o serviço",
         "sidecarFailed": "Falha ao continuar com o Sidecar",
-        "coreAlreadyRunning": "Não foi possível iniciar o modo normal (Sidecar): outro núcleo ainda está em execução (PID {{pid}}). Saia das outras instâncias do Clash Verge ou do aplicativo que usa este núcleo e tente novamente."
+        "coreAlreadyRunning": "Não foi possível iniciar o modo normal (Sidecar): outro núcleo ainda está em execução (PID {{pid}}). Saia das outras instâncias do Clash Verge Rev App ou do aplicativo que usa este núcleo e tente novamente."
       },
       "sysproxy": {
-        "privilegeRequired": "Não é possível definir o proxy do sistema: o macOS recusou a alteração por falta de privilégios. Instale o serviço do Clash Verge; um administrador também pode desativar a exigência de senha de administrador para configurações do sistema, nas opções avançadas em Ajustes do Sistema → Privacidade e Segurança.",
+        "privilegeRequired": "Não é possível definir o proxy do sistema: o macOS recusou a alteração por falta de privilégios. Instale o serviço do Clash Verge Rev App; um administrador também pode desativar a exigência de senha de administrador para configurações do sistema, nas opções avançadas em Ajustes do Sistema → Privacidade e Segurança.",
         "directFallback": "Falha ao definir o proxy do sistema; o tráfego foi revertido para conexão direta.",
         "guardStopped": "A proteção do proxy do sistema parou após falhar várias vezes ao executar. O proxy do sistema não está mais sendo mantido.",
-        "sidecarWhileServiceReady": "Não foi possível definir o proxy do sistema porque o núcleo ainda está em execução como Sidecar, embora o serviço do Clash Verge esteja pronto. Reinicie o núcleo para mudar para o modo serviço.",
-        "coreNotReady": "Não foi possível ativar o proxy do sistema porque o núcleo não está em execução. Inicie o núcleo (ou instale/repare o serviço do Clash Verge) e tente novamente.",
+        "sidecarWhileServiceReady": "Não foi possível definir o proxy do sistema porque o núcleo ainda está em execução como Sidecar, embora o serviço do Clash Verge Rev App esteja pronto. Reinicie o núcleo para mudar para o modo serviço.",
+        "coreNotReady": "Não foi possível ativar o proxy do sistema porque o núcleo não está em execução. Inicie o núcleo (ou instale/repare o serviço do Clash Verge Rev App) e tente novamente.",
         "systemCallFailed": "Não foi possível gravar o proxy do sistema porque uma chamada de sistema do Windows falhou. Geralmente é temporário, então tente novamente."
       }
     },
