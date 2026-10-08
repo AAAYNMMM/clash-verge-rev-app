@@ -68,6 +68,9 @@ pub struct IVerge {
 
     pub tun_tray_icon: Option<bool>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub app_routing: Option<super::app_routing::AppRoutingConfig>,
+
     pub enable_tun_mode: Option<bool>,
 
     pub enable_auto_launch: Option<bool>,
@@ -434,6 +437,7 @@ impl IVerge {
         patch!(sysproxy_tray_icon);
         patch!(tun_tray_icon);
 
+        patch!(app_routing);
         patch!(enable_tun_mode);
         patch!(enable_auto_launch);
         patch!(enable_silent_start);

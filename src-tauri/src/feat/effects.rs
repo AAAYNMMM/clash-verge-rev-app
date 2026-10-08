@@ -69,6 +69,7 @@ verge_registry! {
     collapse_navbar => NoEffect;
     sysproxy_tray_icon => [TrayIcon];
     tun_tray_icon => [TrayIcon];
+    app_routing => [ClashConfig];
     enable_tun_mode => Tun;
     enable_auto_launch => [Autostart];
     enable_silent_start => NoEffect;

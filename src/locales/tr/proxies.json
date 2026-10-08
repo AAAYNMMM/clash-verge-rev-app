@@ -3,7 +3,8 @@
     "modes": {
       "rule": "Kural",
       "global": "Küresel",
-      "direct": "Doğrudan"
+      "direct": "Doğrudan",
+      "app": "APP"
     },
     "actions": {
       "toggleChain": "Zincir Proxy",

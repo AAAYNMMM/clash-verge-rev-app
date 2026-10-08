@@ -160,6 +160,7 @@ mod app_init {
             cmd::patch_clash_config,
             cmd::patch_clash_mode,
             cmd::get_clash_mode,
+            cmd::match_app_nodes,
             cmd::change_clash_core,
             cmd::get_runtime_config,
             cmd::get_proxy_view,

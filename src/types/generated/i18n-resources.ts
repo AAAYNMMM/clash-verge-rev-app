@@ -51,6 +51,7 @@ export interface TranslationResources {
         }
         clashMode: {
           descriptions: {
+            app: string
             direct: string
             global: string
             rule: string
@@ -59,6 +60,7 @@ export interface TranslationResources {
             communication: string
           }
           labels: {
+            app: string
             direct: string
             global: string
             rule: string
@@ -205,6 +207,7 @@ export interface TranslationResources {
             unlock: string
           }
           tabs: {
+            appRules: string
             connections: string
             home: string
             logs: string
@@ -571,6 +574,7 @@ export interface TranslationResources {
           directMode: string
         }
         modes: {
+          app: string
           direct: string
           global: string
           rule: string
@@ -607,6 +611,52 @@ export interface TranslationResources {
       }
     }
     rules: {
+      appRouting: {
+        activate: string
+        addGroup: string
+        applications: string
+        appsHelp: string
+        cancel: string
+        chooseExecutable: string
+        connectionHelp: string
+        currentProfile: string
+        defaultPolicy: string
+        deleteConfirm: string
+        deleteGroup: string
+        direct: string
+        directHelp: string
+        editGroup: string
+        empty: string
+        enabled: string
+        failedNode: string
+        groupName: string
+        inactive: string
+        intro: string
+        loading: string
+        manualOnly: string
+        matchedNodes: string
+        missingNode: string
+        moveDown: string
+        moveUp: string
+        noApplications: string
+        nodePatterns: string
+        nodesUnavailable: string
+        outsideFilter: string
+        patternsHelp: string
+        priority: string
+        processes: string
+        ruleHelp: string
+        ruleMode: string
+        save: string
+        saving: string
+        selectedTarget: string
+        selectNode: string
+        timeout: string
+        title: string
+        tunRequired: string
+        unavailable: string
+        unmatched: string
+      }
       feedback: {
         notifications: {
           provider: {

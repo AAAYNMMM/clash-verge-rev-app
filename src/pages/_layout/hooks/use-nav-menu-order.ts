@@ -41,7 +41,13 @@ const resolveMenuOrder = <T extends { path: string }>(
 
   for (const path of defaultOrder) {
     if (!seen.has(path)) {
-      resolved.push(path)
+      // Add the new settings entry next to Rules without reordering saved tabs.
+      const rulesIndex = resolved.indexOf('/rules')
+      if (path === '/app-rules' && rulesIndex >= 0) {
+        resolved.splice(rulesIndex + 1, 0, path)
+      } else {
+        resolved.push(path)
+      }
       seen.add(path)
     }
   }

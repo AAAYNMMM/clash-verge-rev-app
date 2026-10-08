@@ -5,6 +5,11 @@ use serde_yaml_ng::Mapping;
 use tokio::sync::MutexGuard;
 
 pub async fn patch_clash(patch: &Mapping) -> Result<()> {
+    if let Some(mode) = patch.get("mode")
+        && !matches!(mode.as_str(), Some("app" | "rule" | "global" | "direct"))
+    {
+        anyhow::bail!("Unsupported proxy mode");
+    }
     let config_write = Config::try_lock_config_write()?;
     super::executor::apply(
         &config_write,
@@ -19,6 +24,12 @@ pub async fn patch_clash(patch: &Mapping) -> Result<()> {
 /// TUN patches do not always produce a Run State transition, so reconciliation is explicit.
 pub async fn patch_verge(patch: &IVerge, not_save_file: bool) -> Result<()> {
     apply_verge_patch(patch, not_save_file).await?;
+    if patch.app_routing.is_some()
+        && Config::clash().await.data_arc().get_mode().as_deref() == Some("app")
+        && Config::verge().await.data_arc().auto_close_connection.unwrap_or(false)
+    {
+        super::clash::after_change_clash_mode();
+    }
     if patch.enable_tun_mode.is_some() {
         super::reconcile_tun_availability().await;
     }
@@ -38,6 +49,9 @@ pub(super) async fn apply_verge_patch_locked(
     patch: &IVerge,
     not_save_file: bool,
 ) -> Result<()> {
+    if let Some(routing) = &patch.app_routing {
+        routing.validate()?;
+    }
     super::executor::apply(
         _config_write,
         super::executor::Patch::Verge {

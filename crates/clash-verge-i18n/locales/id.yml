@@ -58,6 +58,7 @@ launchGuard:
   move: Pindahkan
   ok: OK
 tray:
+  appMode: APP
   dashboard: Dasbor
   ruleMode: Mode Aturan
   globalMode: Mode Global

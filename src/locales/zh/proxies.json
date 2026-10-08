@@ -3,7 +3,8 @@
     "modes": {
       "rule": "规则",
       "global": "全局",
-      "direct": "直连"
+      "direct": "直连",
+      "app": "APP"
     },
     "actions": {
       "toggleChain": "链式代理",

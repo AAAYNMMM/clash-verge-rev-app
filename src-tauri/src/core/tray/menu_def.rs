@@ -26,6 +26,7 @@ macro_rules! define_menu {
 
 define_menu! {
     dashboard => DASHBOARD, "tray_dashboard", "tray.dashboard",
+    app_mode => APP_MODE, "tray_app_mode", "tray.appMode",
     rule_mode => RULE_MODE, "tray_rule_mode", "tray.ruleMode",
     global_mode => GLOBAL_MODE, "tray_global_mode", "tray.globalMode",
     direct_mode => DIRECT_MODE, "tray_direct_mode", "tray.directMode",

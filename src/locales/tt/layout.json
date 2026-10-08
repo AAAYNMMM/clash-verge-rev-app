@@ -9,7 +9,8 @@
         "rules": "Кагыйдәләр",
         "logs": "Логлар",
         "unlock": "Test",
-        "settings": "Көйләүләр"
+        "settings": "Көйләүләр",
+        "appRules": "APP Rules"
       },
       "menu": {
         "reorderMode": "Menu reorder mode",

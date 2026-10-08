@@ -1,4 +1,5 @@
 import {
+  AppsRounded,
   DirectionsRounded,
   LanguageRounded,
   MultipleStopRounded,
@@ -20,22 +21,22 @@ import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
 import { setCacheData } from '@/services/query-client'
 import type { TranslationKey } from '@/types/generated/i18n-keys'
-
-const CLASH_MODES = ['rule', 'global', 'direct'] as const
-type ClashMode = (typeof CLASH_MODES)[number]
-
-const isClashMode = (mode: string): mode is ClashMode =>
-  (CLASH_MODES as readonly string[]).includes(mode)
-
-const toClashMode = (mode?: string | null) => {
-  const normalized = mode?.toLowerCase()
-  return normalized && isClashMode(normalized) ? normalized : undefined
-}
+import {
+  coreProxyMode,
+  parseProxyMode as toClashMode,
+  PROXY_MODES as CLASH_MODES,
+  resolveProxyMode,
+  type ProxyMode as ClashMode,
+} from '@/utils/proxy-mode'
 
 const MODE_META: Record<
   ClashMode,
   { label: TranslationKey; description: TranslationKey }
 > = {
+  app: {
+    label: 'home.components.clashMode.labels.app',
+    description: 'home.components.clashMode.descriptions.app',
+  },
   rule: {
     label: 'home.components.clashMode.labels.rule',
     description: 'home.components.clashMode.descriptions.rule',
@@ -51,6 +52,7 @@ const MODE_META: Record<
 }
 
 const MODE_ICONS: Record<ClashMode, ReactNode> = {
+  app: <AppsRounded fontSize="small" />,
   rule: <MultipleStopRounded fontSize="small" />,
   global: <LanguageRounded fontSize="small" />,
   direct: <DirectionsRounded fontSize="small" />,
@@ -73,11 +75,12 @@ export const ClashModeCard = () => {
     data: backendMode,
     isPending: isBackendModePending,
     refetch: refetchBackendMode,
-  } = useClashMode(needFallback)
+  } = useClashMode()
   // Saved config is refreshed on mode changes; runtime config may be stale.
   const fallbackMode = toClashMode(backendMode) ?? runtimeMode
 
-  const resolvedMode = controllerMode ?? fallbackMode
+  const resolvedMode =
+    resolveProxyMode(backendMode, controllerMode) ?? fallbackMode
   const currentMode = optimisticMode ?? resolvedMode
 
   const modeDescription = currentMode
@@ -103,20 +106,23 @@ export const ClashModeCard = () => {
 
     // Write through the live cache to avoid flashing the old mode during refetch.
     setCacheData<BaseConfig>(['getClashConfig'], (old) =>
-      old ? { ...old, mode } : old,
+      old ? { ...old, mode: coreProxyMode(mode) } : old,
     )
+    await setCacheData(['getClashMode'], mode)
     await Promise.allSettled([refreshClashConfig(), refetchBackendMode()])
     setOptimisticMode(null)
   })
 
   const buttonStyles = (mode: ClashMode) => ({
     cursor: 'pointer',
-    px: 2,
+    flex: 1,
+    minWidth: 0,
+    px: 1,
     py: 1.2,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 1,
+    gap: 0.5,
     bgcolor: mode === currentMode ? 'primary.main' : 'background.paper',
     color: mode === currentMode ? 'primary.contrastText' : 'text.primary',
     borderRadius: 1.5,

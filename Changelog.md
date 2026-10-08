@@ -26,6 +26,8 @@
 <details>
 <summary><strong> ✨ 新增功能 </strong></summary>
 
+- 新增「APP」模式：按应用分组选择固定节点或跟随规则，正则筛选节点且不自动故障切换
+
 
 </details>
 

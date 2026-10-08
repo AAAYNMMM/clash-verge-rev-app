@@ -144,12 +144,14 @@
       "labels": {
         "rule": "규칙",
         "global": "전역",
-        "direct": "직접"
+        "direct": "직접",
+        "app": "APP"
       },
       "descriptions": {
         "rule": "규칙 세트에 따라 자동으로 프록시를 선택합니다.",
         "global": "모든 네트워크 요청을 선택한 프록시를 통해 전달합니다.",
-        "direct": "프록시를 우회하여 직접 인터넷에 연결합니다."
+        "direct": "프록시를 우회하여 직접 인터넷에 연결합니다.",
+        "app": "Route applications by group, using a fixed node or existing rules. Fixed nodes never fail over automatically."
       }
     }
   }

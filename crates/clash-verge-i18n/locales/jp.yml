@@ -58,6 +58,7 @@ launchGuard:
   move: 移動
   ok: OK
 tray:
+  appMode: APP
   dashboard: ダッシュボード
   ruleMode: ルールモード
   globalMode: グローバルモード

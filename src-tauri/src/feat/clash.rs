@@ -2,7 +2,7 @@ use crate::core::notify::NoticeStatus;
 use crate::core::notify::{Refresh, announce};
 use crate::{
     config::{Config, MixedPort},
-    core::{CoreManager, handle, tray},
+    core::{CoreManager, handle},
     feat::clean_async,
     process::AsyncHandler,
     utils,
@@ -78,7 +78,7 @@ pub async fn restart_app() {
     app_handle.restart();
 }
 
-fn after_change_clash_mode() {
+pub(super) fn after_change_clash_mode() {
     AsyncHandler::spawn(move || async {
         if let Err(err) = handle::Handle::mihomo().close_all_connections().await {
             logging!(
@@ -90,33 +90,17 @@ fn after_change_clash_mode() {
     });
 }
 
-/// Propagates mihomo PATCH failures so the frontend can roll back its optimistic mode.
+/// APP mode needs a full transaction: Mihomo itself still runs in rule mode.
 pub async fn change_clash_mode(mode: String) -> Result<(), String> {
     let mut mapping = Mapping::new();
     mapping.insert(Value::from("mode"), Value::from(mode.as_str()));
-    let json_value = serde_json::json!({
-        "mode": mode
-    });
-    if let Err(err) = handle::Handle::mihomo().patch_base_config(&json_value).await {
-        logging!(error, Type::Core, "change clash mode failed: {err}");
-        return Err(err.to_string().into());
-    }
+    super::patch_clash(&mapping)
+        .await
+        .map_err(|error| String::from(format!("{error:#}")))?;
 
-    let clash = Config::clash().await;
-    clash.edit_draft(|d| d.patch_config(&mapping));
-    clash.apply();
-
-    let clash_data = clash.data_arc();
-    if clash_data.save_config().await.is_ok() {
-        announce(Refresh::Clash);
-        tray::Tray::global().update_menu_and_icon().await;
-    }
-
-    let is_auto_close_connection = Config::verge().await.data_arc().auto_close_connection.unwrap_or(false);
-    if is_auto_close_connection {
+    if Config::verge().await.data_arc().auto_close_connection.unwrap_or(false) {
         after_change_clash_mode();
     }
-
     Ok(())
 }
 

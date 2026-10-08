@@ -144,12 +144,14 @@
       "labels": {
         "rule": "Правила",
         "global": "Глобальный",
-        "direct": "Прямой"
+        "direct": "Прямой",
+        "app": "APP"
       },
       "descriptions": {
         "rule": "Автоматический выбор прокси в зависимости от правил",
         "global": "Весь трафик проходит через выбранный прокси",
-        "direct": "Подключение напрямую без прокси"
+        "direct": "Подключение напрямую без прокси",
+        "app": "Route applications by group, using a fixed node or existing rules. Fixed nodes never fail over automatically."
       }
     }
   }

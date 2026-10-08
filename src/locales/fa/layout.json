@@ -9,7 +9,8 @@
         "rules": "قوانین",
         "logs": "لاگ‌ها",
         "unlock": "Test",
-        "settings": "تنظیمات"
+        "settings": "تنظیمات",
+        "appRules": "APP Rules"
       },
       "menu": {
         "reorderMode": "Menu reorder mode",

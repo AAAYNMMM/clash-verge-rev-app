@@ -3,7 +3,8 @@
     "modes": {
       "rule": "Правила",
       "global": "Глобальный",
-      "direct": "Прямой"
+      "direct": "Прямой",
+      "app": "APP"
     },
     "actions": {
       "toggleChain": "Цепочка прокси",

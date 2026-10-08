@@ -144,12 +144,14 @@
       "labels": {
         "rule": "Kural Modu",
         "global": "Küresel Mod",
-        "direct": "Doğrudan Mod"
+        "direct": "Doğrudan Mod",
+        "app": "APP"
       },
       "descriptions": {
         "rule": "Vekilleri kural kümesine göre otomatik olarak seçer.",
         "global": "Tüm ağ isteklerini seçili vekil üzerinden iletir.",
-        "direct": "Vekili atlar ve internete doğrudan bağlanır."
+        "direct": "Vekili atlar ve internete doğrudan bağlanır.",
+        "app": "Route applications by group, using a fixed node or existing rules. Fixed nodes never fail over automatically."
       }
     }
   }

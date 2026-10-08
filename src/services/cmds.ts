@@ -117,6 +117,10 @@ export async function patchClashConfig(payload: Partial<IConfigData>) {
   return invoke<void>('patch_clash_config', { payload })
 }
 
+export async function matchAppNodes(patterns: string[], names: string[]) {
+  return invoke<string[]>('match_app_nodes', { patterns, names })
+}
+
 export async function patchClashMode(payload: string) {
   return invoke<void>('patch_clash_mode', { payload })
 }

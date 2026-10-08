@@ -58,6 +58,7 @@ launchGuard:
   move: Mover
   ok: Aceptar
 tray:
+  appMode: APP
   dashboard: Panel
   ruleMode: Modo de reglas
   globalMode: Modo global

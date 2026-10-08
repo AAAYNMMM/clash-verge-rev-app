@@ -58,6 +58,7 @@ launchGuard:
   move: انتقال
   ok: تأیید
 tray:
+  appMode: APP
   dashboard: داشبورد
   ruleMode: حالت قوانین
   globalMode: حالت سراسری

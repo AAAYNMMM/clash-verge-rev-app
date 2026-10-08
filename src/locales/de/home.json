@@ -144,12 +144,14 @@
       "labels": {
         "rule": "Regel-Modus",
         "global": "Globaler Modus",
-        "direct": "Direktverbindungs-Modus"
+        "direct": "Direktverbindungs-Modus",
+        "app": "APP"
       },
       "descriptions": {
         "rule": "Wählt Proxys automatisch anhand der Regeln aus.",
         "global": "Leitet alle Netzwerkanfragen über den ausgewählten Proxy.",
-        "direct": "Umgeht den Proxy und verbindet sich direkt mit dem Internet."
+        "direct": "Umgeht den Proxy und verbindet sich direkt mit dem Internet.",
+        "app": "Route applications by group, using a fixed node or existing rules. Fixed nodes never fail over automatically."
       }
     }
   }

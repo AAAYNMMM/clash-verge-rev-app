@@ -353,12 +353,6 @@ impl Tray {
         Ok(())
     }
 
-    pub async fn update_menu_and_icon(&self) {
-        logging_error!(Type::Tray, self.update_menu().await);
-        let verge = Config::verge().await.data_arc();
-        logging_error!(Type::Tray, self.update_icon(&verge).await);
-    }
-
     async fn create_tray_from_handle(&self, app_handle: &AppHandle) -> Result<()> {
         if handle::Handle::global().is_exiting() {
             logging!(debug, Type::Tray, "应用正在退出，跳过托盘创建");
@@ -663,6 +657,15 @@ async fn create_tray_menu(
         hotkeys.get("open_or_close_dashboard").copied(),
     )?;
 
+    let app_mode = &CheckMenuItem::with_id(
+        app_handle,
+        MenuIds::APP_MODE,
+        &texts.app_mode,
+        true,
+        current_proxy_mode == "app",
+        None::<&str>,
+    )?;
+
     let rule_mode = &CheckMenuItem::with_id(
         app_handle,
         MenuIds::RULE_MODE,
@@ -694,6 +697,7 @@ async fn create_tray_menu(
         None
     } else {
         let current_mode_text = match current_proxy_mode {
+            "app" => clash_verge_i18n::t!("tray.appMode"),
             "global" => clash_verge_i18n::t!("tray.global"),
             "direct" => clash_verge_i18n::t!("tray.direct"),
             _ => clash_verge_i18n::t!("tray.rule"),
@@ -705,6 +709,7 @@ async fn create_tray_menu(
             outbound_modes_label.as_str(),
             true,
             &[
+                app_mode as &dyn IsMenuItem<Wry>,
                 rule_mode as &dyn IsMenuItem<Wry>,
                 global_mode as &dyn IsMenuItem<Wry>,
                 direct_mode as &dyn IsMenuItem<Wry>,
@@ -833,6 +838,7 @@ async fn create_tray_menu(
 
     if show_outbound_modes_inline {
         menu_items.extend_from_slice(&[
+            app_mode as &dyn IsMenuItem<Wry>,
             rule_mode as &dyn IsMenuItem<Wry>,
             global_mode as &dyn IsMenuItem<Wry>,
             direct_mode as &dyn IsMenuItem<Wry>,
@@ -925,7 +931,7 @@ fn on_menu_event(_: &AppHandle, event: MenuEvent) {
     }
     AsyncHandler::spawn(|| async move {
         match event.id.as_ref() {
-            mode @ (MenuIds::RULE_MODE | MenuIds::GLOBAL_MODE | MenuIds::DIRECT_MODE) => {
+            mode @ (MenuIds::APP_MODE | MenuIds::RULE_MODE | MenuIds::GLOBAL_MODE | MenuIds::DIRECT_MODE) => {
                 if let Some(final_mode) = mode.strip_circumfix("tray_", "_mode") {
                     logging!(info, Type::ProxyMode, "Switch Proxy Mode To: {}", final_mode);
                     let _ = feat::change_clash_mode(final_mode.into()).await;

@@ -58,6 +58,7 @@ launchGuard:
   move: نقل
   ok: موافق
 tray:
+  appMode: APP
   dashboard: لوحة التحكم
   ruleMode: وضع القواعد
   globalMode: الوضع العام

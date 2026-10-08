@@ -3,7 +3,8 @@
     "modes": {
       "rule": "Rule",
       "global": "Global",
-      "direct": "Direct"
+      "direct": "Direct",
+      "app": "APP"
     },
     "actions": {
       "toggleChain": "Proxy Rantai",

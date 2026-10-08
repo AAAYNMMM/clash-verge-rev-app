@@ -9,7 +9,8 @@
         "rules": "Normas",
         "logs": "Registros",
         "unlock": "Descubrir",
-        "settings": "Ajustes"
+        "settings": "Ajustes",
+        "appRules": "APP Rules"
       },
       "menu": {
         "reorderMode": "Menu reorder mode",

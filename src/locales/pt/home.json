@@ -144,12 +144,14 @@
       "labels": {
         "rule": "Regra",
         "global": "Global",
-        "direct": "Direto"
+        "direct": "Direto",
+        "app": "APP"
       },
       "descriptions": {
         "rule": "Escolhe proxies automaticamente de acordo com o conjunto de regras.",
         "global": "Encaminha todas as requisições de rede pelo proxy selecionado.",
-        "direct": "Ignora o proxy e conecta diretamente à internet."
+        "direct": "Ignora o proxy e conecta diretamente à internet.",
+        "app": "Route applications by group, using a fixed node or existing rules. Fixed nodes never fail over automatically."
       }
     }
   }

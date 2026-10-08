@@ -9,7 +9,8 @@
         "rules": "Правила",
         "logs": "Логи",
         "unlock": "Тест",
-        "settings": "Настройки"
+        "settings": "Настройки",
+        "appRules": "APP Rules"
       },
       "menu": {
         "reorderMode": "Режим изменения порядка меню",

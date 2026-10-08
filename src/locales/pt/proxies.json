@@ -3,7 +3,8 @@
     "modes": {
       "rule": "Regra",
       "global": "Global",
-      "direct": "Direto"
+      "direct": "Direto",
+      "app": "APP"
     },
     "actions": {
       "toggleChain": "Proxy em cadeia",

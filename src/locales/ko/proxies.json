@@ -3,7 +3,8 @@
     "modes": {
       "rule": "규칙",
       "global": "전역",
-      "direct": "직접"
+      "direct": "직접",
+      "app": "APP"
     },
     "actions": {
       "toggleChain": "체인 프록시",

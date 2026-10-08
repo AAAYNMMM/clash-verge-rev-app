@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { BasePage, TooltipIcon } from '@/components/base'
 import { ProviderButton } from '@/components/proxy/provider-button'
 import { ProxyGroups } from '@/components/proxy/proxy-groups'
+import { useClashMode } from '@/hooks/use-clash'
 import {
   useAppRefreshers,
   useClashConfigData,
@@ -19,9 +20,13 @@ import {
 import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
 import { debugLog } from '@/utils/debug'
+import {
+  PROXY_MODES as MODES,
+  resolveProxyMode,
+  coreProxyMode,
+  type ProxyMode as Mode,
+} from '@/utils/proxy-mode'
 
-const MODES = ['rule', 'global', 'direct'] as const
-type Mode = (typeof MODES)[number]
 const MODE_SET = new Set<string>(MODES)
 const isMode = (value: unknown): value is Mode =>
   typeof value === 'string' && MODE_SET.has(value)
@@ -45,6 +50,7 @@ const ProxyPage = () => {
   )
 
   const { clashConfig } = useClashConfigData()
+  const { data: savedMode } = useClashMode()
   const { refreshClashConfig } = useAppRefreshers()
 
   const updateChainConfigData = useCallback((value: string | null) => {
@@ -52,7 +58,7 @@ const ProxyPage = () => {
   }, [])
 
   const normalizedMode = clashConfig?.mode?.toLowerCase()
-  const curMode = isMode(normalizedMode) ? normalizedMode : undefined
+  const curMode = resolveProxyMode(savedMode, normalizedMode)
   const chainWarning = t('proxies.page.chain.warning')
 
   const onChangeMode = useLockFn(async (mode: Mode) => {
@@ -60,6 +66,7 @@ const ProxyPage = () => {
       // patchClashMode 在后端 PATCH 失败时会 reject，需提示用户而非静默失败
       await mutate(() => patchClashMode(mode), {
         id: 'patch-clash-mode',
+        revalidate: [['getClashMode']],
         errorNotice: false,
       })
       refreshClashConfig()
@@ -195,7 +202,7 @@ const ProxyPage = () => {
       }
     >
       <ProxyGroups
-        mode={curMode ?? 'rule'}
+        mode={coreProxyMode(curMode ?? 'rule')}
         isChainMode={isChainMode}
         chainConfigData={chainConfigData}
       />

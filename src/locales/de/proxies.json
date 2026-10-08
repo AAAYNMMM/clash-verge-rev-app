@@ -3,7 +3,8 @@
     "modes": {
       "rule": "Regel",
       "global": "Global",
-      "direct": "Direkt"
+      "direct": "Direkt",
+      "app": "APP"
     },
     "actions": {
       "toggleChain": "Ketten-Proxy",
