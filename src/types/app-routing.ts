@@ -21,3 +21,9 @@ export interface AppRoutingConfig {
   groups: AppRoutingGroup[]
   unmatched: 'direct' | 'rule'
 }
+
+export interface RunningApp {
+  name: string
+  path: string | null
+  process_count: number
+}

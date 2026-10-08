@@ -48,6 +48,7 @@ const AppRulesPage = () => {
   const { data: mode } = useClashMode()
   const { proxyView, isProxyViewPending, isProxyViewError } = useProxiesData()
   const { refreshProxy, refreshClashConfig } = useAppRefreshers()
+  const tunEnabled = verge?.enable_tun_mode === true
   const routing = verge?.app_routing ?? EMPTY_ROUTING
   const nodes = appNodes(proxyView)
   const [editing, setEditing] = useState<AppRoutingGroup | null>(null)
@@ -89,7 +90,7 @@ const AppRulesPage = () => {
   }
 
   const activate = async () => {
-    if (writingRef.current) return
+    if (writingRef.current || tunEnabled || !verge) return
     writingRef.current = true
     setSaving(true)
     try {
@@ -133,24 +134,28 @@ const AppRulesPage = () => {
     >
       <Stack spacing={2} sx={{ p: 1 }}>
         <Alert severity="info">{t('rules.appRouting.intro')}</Alert>
-        {mode !== 'app' && (
+        {(mode !== 'app' || tunEnabled) && (
           <Alert
             severity="warning"
             action={
               <Button
                 size="small"
                 onClick={activate}
-                disabled={saving || !verge}
+                disabled={saving || !verge || tunEnabled}
               >
                 {t('rules.appRouting.activate')}
               </Button>
             }
           >
-            {t('rules.appRouting.inactive')}
+            {t(
+              tunEnabled
+                ? 'rules.appRouting.tunDisabled'
+                : 'rules.appRouting.inactive',
+            )}
           </Alert>
         )}
-        {!verge?.enable_tun_mode && (
-          <Alert severity="warning">{t('rules.appRouting.tunRequired')}</Alert>
+        {!tunEnabled && (
+          <Alert severity="info">{t('rules.appRouting.trafficHelp')}</Alert>
         )}
         {isProxyViewError && (
           <Alert severity="warning">
@@ -325,16 +330,17 @@ const AppRulesPage = () => {
                     </Typography>
                   )}
                 </Stack>
-                {group.node_patterns.length > 0 && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ overflowWrap: 'anywhere' }}
-                  >
-                    {t('rules.appRouting.nodePatterns')}:{' '}
-                    {group.node_patterns.join(' | ')}
-                  </Typography>
-                )}
+                {group.target.kind === 'node' &&
+                  group.node_patterns.length > 0 && (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ overflowWrap: 'anywhere' }}
+                    >
+                      {t('rules.appRouting.nodePatterns')}:{' '}
+                      {group.node_patterns.join(' | ')}
+                    </Typography>
+                  )}
                 {(missing || timedOut) && group.enabled && (
                   <Alert severity="warning">
                     {t(

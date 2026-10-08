@@ -614,10 +614,14 @@ export interface TranslationResources {
       appRouting: {
         activate: string
         addGroup: string
+        addSelectedApps: string
+        alreadyAdded: string
         applications: string
         appsHelp: string
         cancel: string
         chooseExecutable: string
+        chooseNode: string
+        chooseRunningApps: string
         connectionHelp: string
         currentProfile: string
         defaultPolicy: string
@@ -625,14 +629,23 @@ export interface TranslationResources {
         deleteGroup: string
         direct: string
         directHelp: string
+        disabledGroup: string
         editGroup: string
         empty: string
+        emptyGroupsPage: string
         enabled: string
         failedNode: string
+        fixedNode: string
+        groupClickHelp: string
         groupName: string
+        groupsPageHelp: string
+        groupsPageTitle: string
         inactive: string
         intro: string
+        legacyDirect: string
         loading: string
+        manageGroups: string
+        manualApplications: string
         manualOnly: string
         matchedNodes: string
         missingNode: string
@@ -641,19 +654,32 @@ export interface TranslationResources {
         noApplications: string
         nodePatterns: string
         nodesUnavailable: string
+        noGroupNodes: string
+        noRunningApps: string
         outsideFilter: string
         patternsHelp: string
         priority: string
+        processCount: string
         processes: string
+        processListError: string
+        processNameFallback: string
+        refreshApps: string
+        refreshNodes: string
+        routeMode: string
+        ruleGroupSummary: string
         ruleHelp: string
         ruleMode: string
+        runningApps: string
+        runningAppsHelp: string
         save: string
         saving: string
+        searchApps: string
         selectedTarget: string
         selectNode: string
         timeout: string
         title: string
-        tunRequired: string
+        trafficHelp: string
+        tunDisabled: string
         unavailable: string
         unmatched: string
       }

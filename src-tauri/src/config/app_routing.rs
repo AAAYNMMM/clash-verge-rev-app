@@ -74,6 +74,24 @@ pub fn compile_patterns(patterns: &[String]) -> Result<Vec<Regex>> {
 }
 
 impl AppRoutingConfig {
+    pub fn with_selected_node(&self, group_id: &str, target: AppTarget) -> Result<Self> {
+        if !matches!(target, AppTarget::Node { .. }) {
+            bail!("Choose a proxy node, not a routing mode");
+        }
+        let mut next = self.clone();
+        let group = next
+            .groups
+            .iter_mut()
+            .find(|group| group.id == group_id)
+            .ok_or_else(|| anyhow::anyhow!("APP group no longer exists"))?;
+        if !group.enabled || !matches!(group.target, AppTarget::Node { .. }) {
+            bail!("This APP group is disabled or uses Rule mode; edit the group first");
+        }
+        group.target = target;
+        next.validate()?;
+        Ok(next)
+    }
+
     pub fn validate(&self) -> Result<()> {
         let mut ids = HashSet::new();
         for group in &self.groups {
@@ -94,8 +112,8 @@ impl AppRoutingConfig {
                     bail!("Invalid application in APP group {:?}", group.name);
                 }
             }
-            let patterns = compile_patterns(&group.node_patterns)?;
             if let AppTarget::Node { name, provider } = &group.target {
+                let patterns = compile_patterns(&group.node_patterns)?;
                 if name.is_empty() || provider.as_ref().is_some_and(|name| name.is_empty()) {
                     bail!("APP groups require a node name and a valid source");
                 }
@@ -107,6 +125,80 @@ impl AppRoutingConfig {
                 }
             }
         }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod selection_tests {
+    use super::*;
+
+    fn fixture() -> Result<AppRoutingConfig> {
+        Ok(serde_yaml_ng::from_str(
+            r#"
+groups:
+- {id: ai, name: AI, apps: [{kind: name, value: ai.exe}], node_patterns: ['^home-'], target: {kind: node, name: home-1}}
+- {id: chat, name: Chat, apps: [{kind: name, value: chat.exe}], node_patterns: ['^home-'], target: {kind: node, name: home-1}}
+- {id: browser, name: Browser, apps: [{kind: name, value: browser.exe}], target: {kind: rule}}
+"#,
+        )?)
+    }
+
+    #[test]
+    fn manual_selection_preserves_other_groups_and_node_source() -> Result<()> {
+        let routing = fixture()?;
+        let first = routing.with_selected_node(
+            "ai",
+            AppTarget::Node {
+                name: "home-2".into(),
+                provider: Some("provider-one".into()),
+            },
+        )?;
+        let second = first.with_selected_node(
+            "chat",
+            AppTarget::Node {
+                name: "home-3".into(),
+                provider: None,
+            },
+        )?;
+        assert!(
+            matches!(&second.groups[0].target, AppTarget::Node { name, provider } if name == "home-2" && provider.as_deref() == Some("provider-one"))
+        );
+        assert!(matches!(&second.groups[1].target, AppTarget::Node { name, .. } if name == "home-3"));
+        assert!(matches!(&second.groups[2].target, AppTarget::Rule));
+        assert_eq!(
+            serde_yaml_ng::to_string(&second.groups[0].apps)?,
+            serde_yaml_ng::to_string(&routing.groups[0].apps)?
+        );
+        assert_eq!(second.groups[0].node_patterns, routing.groups[0].node_patterns);
+        Ok(())
+    }
+
+    #[test]
+    fn stale_group_modes_and_outside_filter_choices_do_not_mutate_selection() -> Result<()> {
+        let mut routing = fixture()?;
+        let original = serde_yaml_ng::to_string(&routing)?;
+        let node = || AppTarget::Node {
+            name: "home-2".into(),
+            provider: None,
+        };
+        assert!(routing.with_selected_node("browser", node()).is_err());
+        assert!(routing.with_selected_node("deleted", node()).is_err());
+        assert!(routing.with_selected_node("ai", AppTarget::Rule).is_err());
+        assert!(
+            routing
+                .with_selected_node(
+                    "ai",
+                    AppTarget::Node {
+                        name: "office-1".into(),
+                        provider: None
+                    }
+                )
+                .is_err()
+        );
+        assert_eq!(serde_yaml_ng::to_string(&routing)?, original);
+        routing.groups[0].enabled = false;
+        assert!(routing.with_selected_node("ai", node()).is_err());
         Ok(())
     }
 }

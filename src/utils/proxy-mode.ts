@@ -11,13 +11,17 @@ export const parseProxyMode = (
 export const resolveProxyMode = (
   saved?: string | null,
   running?: string | null,
+  tunEnabled: boolean = false,
 ): ProxyMode | undefined => {
   const core = parseProxyMode(running)
   const source = parseProxyMode(saved)
-  return source === 'app' && (!core || core === 'rule')
-    ? 'app'
-    : (core ?? source)
+  const resolved =
+    source === 'app' && (!core || core === 'rule') ? 'app' : (core ?? source)
+  return tunEnabled && resolved === 'app' ? 'rule' : resolved
 }
 
 export const coreProxyMode = (mode: ProxyMode) =>
   mode === 'app' ? 'rule' : mode
+
+export const isProxyModeDisabled = (mode: ProxyMode, tunEnabled: boolean) =>
+  mode === 'app' && tunEnabled

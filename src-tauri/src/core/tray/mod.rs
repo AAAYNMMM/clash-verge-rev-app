@@ -661,7 +661,7 @@ async fn create_tray_menu(
         app_handle,
         MenuIds::APP_MODE,
         &texts.app_mode,
-        true,
+        !verge_settings.enable_tun_mode.unwrap_or(false),
         current_proxy_mode == "app",
         None::<&str>,
     )?;

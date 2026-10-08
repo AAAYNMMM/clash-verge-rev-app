@@ -6,9 +6,9 @@ An independent fork of [Clash Verge Rev](https://github.com/clash-verge-rev/clas
 
 ## APP routing
 
-Select **APP** on the home page or proxy page. Open **APP Rules** in the sidebar to create ordered groups, add process names or executable paths, and filter node names with regular expressions.
+Select **APP** on the home page or proxy page. Open **APP Rules** in the sidebar to create ordered groups, add process names or executable paths, or select running programs from a searchable list, and choose either Rule delegation or node filtering. In APP mode the Proxy page shows only user-defined APP groups and each group’s matching nodes; click one to save and apply that group’s fixed exit. Subscription selectors, URL-test and fallback groups are not shown in this view.
 
-A group can delegate to the existing **Rule mode**, use **Direct**, or pin one manually selected node. Rule delegation follows the original rule chain and its current proxy-group selections. A pinned node never fails over to another node or direct when it goes offline or disappears. Unmatched applications default to direct; the fallback is configurable. TUN is needed to capture applications that do not use the system proxy.
+A group can delegate to the existing **Rule mode**, use **Direct**, or pin one manually selected node. Rule delegation follows the original rule chain and its current proxy-group selections. A pinned node never fails over to another node or direct when it goes offline or disappears. Unmatched applications default to direct; the fallback is configurable. APP mode intentionally cannot be used with TUN. Enabling TUN while APP is active switches to ordinary Rule mode and disables APP until TUN is turned off. APP mode only routes connections sent to this client’s HTTP/SOCKS proxy ports; it does not transparently capture applications that ignore system or explicit proxy settings.
 
 ## Independent identity
 

@@ -96,8 +96,17 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig) -> Result<Mapping>
     if config.get("mode").and_then(Value::as_str) != Some("app") {
         return Ok(config);
     }
-    routing.validate()?;
     config.insert("mode".into(), "rule".into());
+    // Enforce the policy even for restored configurations that still contain both switches.
+    if config
+        .get("tun")
+        .and_then(|tun| tun.get("enable"))
+        .and_then(Value::as_bool)
+        == Some(true)
+    {
+        return Ok(config);
+    }
+    routing.validate()?;
     config.insert("find-process-mode".into(), "always".into());
 
     let original_rules = config
@@ -196,6 +205,36 @@ mod tests {
             name: "home-1".into(),
             provider: None,
         }
+    }
+
+    #[test]
+    fn tun_does_not_compile_app_rules_or_validate_inactive_node_filters() {
+        let mut config = fixture();
+        config.insert("tun".into(), serde_yaml_ng::from_str("{enable: true}").expect("tun"));
+        let mut invalid = group("ai", fixed());
+        invalid.node_patterns = vec!["[".into()];
+        let original_rules = config["rules"].clone();
+        let result = apply(
+            config,
+            &AppRoutingConfig {
+                groups: vec![invalid],
+                ..Default::default()
+            },
+        )
+        .expect("tun");
+        assert_eq!(result["mode"], Value::from("rule"));
+        assert_eq!(result["rules"], original_rules);
+        assert!(!result.contains_key("find-process-mode"));
+        let mut rule = group("browser", AppTarget::Rule);
+        rule.node_patterns = vec!["[".into()];
+        assert!(
+            AppRoutingConfig {
+                groups: vec![rule],
+                ..Default::default()
+            }
+            .validate()
+            .is_ok()
+        );
     }
 
     #[test]

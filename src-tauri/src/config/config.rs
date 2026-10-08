@@ -81,6 +81,16 @@ impl Config {
 
         let verge = Self::verge().await.latest_arc();
         clash_verge_i18n::sync_locale(verge.language.as_deref());
+        let _config_write = Self::lock_config_write().await;
+        let clash = Self::clash().await;
+        if verge.enable_tun_mode == Some(true) && clash.data_arc().get_mode().as_deref() == Some("app") {
+            let transaction = clash_verge_draft::DraftTransaction::begin(vec![&clash])?;
+            clash.edit_draft(|draft| {
+                draft.disable_app_mode_for_tun(true);
+            });
+            clash.latest_arc().save_config().await?;
+            transaction.commit();
+        }
 
         Ok(())
     }

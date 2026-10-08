@@ -54,3 +54,42 @@ export const findAppNode = (nodes: ProxyNodeView[], target: AppTarget) =>
   target.kind === 'node'
     ? nodes.find((node) => targetKey(nodeTarget(node)) === targetKey(target))
     : undefined
+
+export const applicationKey = (value: string, windows: boolean) =>
+  windows ? value.replaceAll('/', '\\').toLowerCase() : value
+
+export const mergeApplications = (
+  current: string,
+  added: readonly string[],
+  windows: boolean,
+): string => {
+  const unique = new Map<string, string>()
+  for (const app of parseApplications([current, ...added].join('\n'))) {
+    const key = applicationKey(app.value, windows)
+    if (!unique.has(key)) unique.set(key, app.value)
+  }
+  return [...unique.values()].join('\n')
+}
+
+export const nodeFilters = (patterns: string) => {
+  const filters = parseLines(patterns)
+  return filters.length ? filters : ['.*']
+}
+
+export const groupRouteFields = (
+  target: Exclude<AppTarget, { kind: 'direct' }>,
+  patterns: string,
+) => ({
+  target,
+  node_patterns: target.kind === 'node' ? nodeFilters(patterns) : [],
+})
+
+export const groupNodeCandidates = (
+  group: import('@/types/app-routing').AppRoutingGroup,
+  nodes: ProxyNodeView[],
+  matchedNames: readonly string[],
+) => {
+  if (group.target.kind !== 'node') return []
+  const matched = new Set(matchedNames)
+  return nodes.filter((node) => matched.has(node.source.proxyName))
+}

@@ -1,3 +1,4 @@
+mod app_routing;
 mod backup;
 mod clash;
 mod config;
@@ -13,6 +14,7 @@ mod tun;
 mod window;
 
 // Re-export all functions from modules
+pub use app_routing::*;
 pub use backup::*;
 pub use clash::*;
 pub use config::*;

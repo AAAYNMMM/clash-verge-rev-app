@@ -153,6 +153,15 @@ impl IClashTemp {
         }
     }
 
+    pub fn disable_app_mode_for_tun(&mut self, tun_enabled: bool) -> bool {
+        if tun_enabled && self.0.get("mode").and_then(Value::as_str) == Some("app") {
+            self.0.insert("mode".into(), "rule".into());
+            true
+        } else {
+            false
+        }
+    }
+
     pub async fn save_config(&self) -> Result<()> {
         help::save_yaml(
             &dirs::clash_path()?,
@@ -430,4 +439,24 @@ pub struct IClashFallbackFilter {
     pub geoip_code: Option<String>,
     pub ipcidr: Option<Vec<String>>,
     pub domain: Option<Vec<String>>,
+}
+
+#[cfg(test)]
+mod app_tun_mode_tests {
+    use super::IClashTemp;
+
+    #[test]
+    fn tun_drops_only_app_mode_and_never_restores_it_on_disable() {
+        for mode in ["app", "rule", "global", "direct"] {
+            let mut config = IClashTemp::default();
+            config.0.insert("mode".into(), mode.into());
+            assert!(!config.disable_app_mode_for_tun(false));
+            assert_eq!(config.disable_app_mode_for_tun(true), mode == "app");
+            assert!(!config.disable_app_mode_for_tun(false));
+            assert_eq!(
+                config.get_mode().as_deref(),
+                Some(if mode == "app" { "rule" } else { mode })
+            );
+        }
+    }
 }

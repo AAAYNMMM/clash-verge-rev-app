@@ -11,6 +11,25 @@ pub async fn patch_clash(patch: &Mapping) -> Result<()> {
         anyhow::bail!("Unsupported proxy mode");
     }
     let config_write = Config::try_lock_config_write()?;
+    if patch.get("mode").and_then(serde_yaml_ng::Value::as_str) == Some("app") {
+        let tun_requested = Config::verge().await.latest_arc().enable_tun_mode.unwrap_or(false);
+        let tun_running = Config::runtime()
+            .await
+            .data_arc()
+            .config
+            .as_ref()
+            .is_some_and(|config| {
+                config
+                    .get("tun")
+                    .and_then(|tun| tun.get("enable"))
+                    .and_then(serde_yaml_ng::Value::as_bool)
+                    == Some(true)
+            });
+        anyhow::ensure!(
+            !tun_requested && !tun_running,
+            "APP mode is unavailable while TUN is enabled. Disable TUN first."
+        );
+    }
     super::executor::apply(
         &config_write,
         super::executor::Patch::Clash(patch),

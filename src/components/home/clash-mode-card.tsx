@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import type { BaseConfig } from 'tauri-plugin-mihomo-api'
 
 import { useClashMode, useRuntimeConfig } from '@/hooks/use-clash'
+import { useVerge } from '@/hooks/use-verge'
 import {
   useAppRefreshers,
   useClashConfigData,
@@ -23,6 +24,7 @@ import { setCacheData } from '@/services/query-client'
 import type { TranslationKey } from '@/types/generated/i18n-keys'
 import {
   coreProxyMode,
+  isProxyModeDisabled,
   parseProxyMode as toClashMode,
   PROXY_MODES as CLASH_MODES,
   resolveProxyMode,
@@ -61,6 +63,10 @@ const MODE_ICONS: Record<ClashMode, ReactNode> = {
 export const ClashModeCard = () => {
   const { t } = useTranslation()
   const { clashConfig } = useClashConfigData()
+  const { verge } = useVerge()
+  const tunEnabled = verge?.enable_tun_mode === true
+  const modeDisabled = (mode: ClashMode) =>
+    !verge || isProxyModeDisabled(mode, tunEnabled)
   const { isCoreDataPending } = useCoreDataStatus()
   const { refreshClashConfig } = useAppRefreshers()
 
@@ -80,8 +86,10 @@ export const ClashModeCard = () => {
   const fallbackMode = toClashMode(backendMode) ?? runtimeMode
 
   const resolvedMode =
-    resolveProxyMode(backendMode, controllerMode) ?? fallbackMode
-  const currentMode = optimisticMode ?? resolvedMode
+    resolveProxyMode(backendMode, controllerMode, tunEnabled) ?? fallbackMode
+  const selectedMode = optimisticMode ?? resolvedMode
+  const currentMode =
+    selectedMode === 'app' && tunEnabled ? 'rule' : selectedMode
 
   const modeDescription = currentMode
     ? t(MODE_META[currentMode].description)
@@ -90,7 +98,7 @@ export const ClashModeCard = () => {
       : t('home.components.clashMode.errors.communication')
 
   const onChangeMode = useLockFn(async (mode: ClashMode) => {
-    if (mode === currentMode) return
+    if (mode === currentMode || modeDisabled(mode)) return
 
     setOptimisticMode(mode)
     try {
@@ -114,7 +122,10 @@ export const ClashModeCard = () => {
   })
 
   const buttonStyles = (mode: ClashMode) => ({
-    cursor: 'pointer',
+    cursor: modeDisabled(mode) ? 'not-allowed' : 'pointer',
+    border: 0,
+    font: 'inherit',
+    '&:disabled': { opacity: 0.45 },
     flex: 1,
     minWidth: 0,
     px: 1,
@@ -129,11 +140,11 @@ export const ClashModeCard = () => {
     transition: 'all 0.2s ease-in-out',
     position: 'relative',
     overflow: 'visible',
-    '&:hover': {
+    '&:not(:disabled):hover': {
       transform: 'translateY(-1px)',
       boxShadow: 1,
     },
-    '&:active': {
+    '&:not(:disabled):active': {
       transform: 'translateY(1px)',
     },
     '&::after':
@@ -181,6 +192,14 @@ export const ClashModeCard = () => {
         {CLASH_MODES.map((mode) => (
           <Paper
             key={mode}
+            component="button"
+            type="button"
+            disabled={modeDisabled(mode)}
+            title={
+              mode === 'app' && tunEnabled
+                ? t('rules.appRouting.tunDisabled')
+                : undefined
+            }
             elevation={mode === currentMode ? 2 : 0}
             onClick={() => onChangeMode(mode)}
             sx={buttonStyles(mode)}
@@ -211,6 +230,9 @@ export const ClashModeCard = () => {
       >
         <Typography variant="caption" component="div" sx={descriptionStyles}>
           {modeDescription}
+          {tunEnabled && (
+            <Box sx={{ mt: 0.5 }}>{t('rules.appRouting.tunDisabled')}</Box>
+          )}
         </Typography>
       </Box>
     </Box>

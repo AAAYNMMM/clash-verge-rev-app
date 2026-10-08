@@ -44,7 +44,15 @@ export const useVerge = () => {
   const patchVerge = useCallback(async (value: Partial<IVergeConfig>) => {
     await mutate(() => patchVergeConfig(value), {
       id: 'patch-verge-config',
-      revalidate: [['getVergeConfig']],
+      revalidate:
+        value.enable_tun_mode !== undefined
+          ? [
+              ['getVergeConfig'],
+              ['getClashMode'],
+              ['getRuntimeConfig'],
+              ['getClashConfig'],
+            ]
+          : [['getVergeConfig']],
       errorNotice: false,
     })
   }, [])

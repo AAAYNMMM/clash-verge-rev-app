@@ -4,6 +4,7 @@ use std::{
 };
 
 pub mod commands;
+pub mod processes;
 
 #[cfg(windows)]
 use deelevate::{PrivilegeLevel, Token};

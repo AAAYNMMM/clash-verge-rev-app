@@ -607,3 +607,17 @@ export async function checkMediaUnlock(onComplete: Channel<UnlockItem>) {
 export async function checkMediaUnlockItem(name: string) {
   return invoke<UnlockItem>('check_media_unlock_item', { name })
 }
+
+export async function getRunningApps() {
+  return invoke<import('@/types/app-routing').RunningApp[]>('get_running_apps')
+}
+
+export async function selectAppGroupNode(
+  groupId: string,
+  nodeRecordId: string,
+) {
+  return invoke<import('@/types/app-routing').AppRoutingConfig>(
+    'select_app_group_node',
+    { groupId, nodeRecordId },
+  )
+}
