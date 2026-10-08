@@ -55,7 +55,7 @@ pub fn list_running_apps() -> Vec<RunningApp> {
                 let name = process
                     .exe()
                     .and_then(|path| path.file_name())
-                    .unwrap_or(process.name())
+                    .unwrap_or_else(|| process.name())
                     .to_string_lossy()
                     .into_owned();
                 (name, path)
