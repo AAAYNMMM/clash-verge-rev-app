@@ -17,8 +17,8 @@ panic = "unwind"
 codegen-units = 1
 lto = "thin"
 opt-level = 3
-debug = 1
-strip = "none"
+debug = 0
+strip = "debuginfo"
 overflow-checks = false
 split-debuginfo = "unpacked"
 rpath = false
@@ -39,8 +39,8 @@ codegen-units = 64
 incremental = true
 lto = false
 opt-level = 0
-debug = true
-strip = false
+debug = 0
+strip = "debuginfo"
 
 [profile.debug-release]
 inherits = "fast-release"

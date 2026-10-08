@@ -32,6 +32,16 @@ Build service helpers from the vendored service source, not renamed upstream bin
 
 Quality checks should target modified behavior, with actual Mihomo syntax and isolation checks for routing changes. Unit tests cannot establish production TUN end-to-end behavior.
 
+## Public Windows bundles
+
+Release builds use an isolated Cargo cache outside the developer profile and a
+path-remapping Rust toolchain. Set the `CVR_PUBLIC_CARGO_HOME` environment variable
+to that cache and run `node scripts/build-public-windows.mjs` (or `--fast` for
+test bundles). The driver rebuilds the bundled service helpers, signs the
+installer using the configured Tauri signing key, and refuses binaries containing
+local user-directory metadata via `scripts/check-public-bundle.mjs`. The cache must
+not contain personal project configuration or credentials.
+
 ## Change policy
 
 Scope patches to the reported issue and avoid unrelated refactors. Keep generated wire contracts aligned across Rust backend and TypeScript UI. Service protocol changes require real IPC regression coverage. Do not weaken IPC authentication, release signatures or installation ownership checks to bypass failures.
