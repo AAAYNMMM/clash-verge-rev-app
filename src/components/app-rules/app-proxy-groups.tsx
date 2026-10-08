@@ -361,61 +361,63 @@ export const AppProxyGroups = () => {
   }
 
   return (
-    <Stack spacing={1.5} sx={{ p: 1.25 }}>
-      <Stack
-        direction="row"
-        spacing={1}
-        sx={{
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          {t('rules.appRouting.groupsPageHelp')}
-        </Typography>
-        <Button
-          size="small"
-          startIcon={<RefreshRounded />}
-          disabled={isProxyViewPending || !!pendingKey}
-          onClick={() => void refreshProxy()}
+    <Box sx={{ height: '100%', overflowY: 'auto', overflowX: 'hidden' }}>
+      <Stack spacing={1.5} sx={{ p: 1.25 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+          }}
         >
-          {t('rules.appRouting.refreshNodes')}
-        </Button>
-      </Stack>
-      {!verge ? (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
-          <CircularProgress size={28} />
-        </Box>
-      ) : groups.length === 0 ? (
-        <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
-          <Typography color="text.secondary" sx={{ mb: 2 }}>
-            {t('rules.appRouting.emptyGroupsPage')}
+          <Typography variant="body2" color="text.secondary">
+            {t('rules.appRouting.groupsPageHelp')}
           </Typography>
           <Button
-            variant="contained"
-            startIcon={<SettingsOutlined />}
-            onClick={() => navigate('/app-rules')}
+            size="small"
+            startIcon={<RefreshRounded />}
+            disabled={isProxyViewPending || !!pendingKey}
+            onClick={() => void refreshProxy()}
           >
-            {t('rules.appRouting.manageGroups')}
+            {t('rules.appRouting.refreshNodes')}
           </Button>
-        </Paper>
-      ) : (
-        groups.map((group) => (
-          <AppProxyGroup
-            key={group.id}
-            group={group}
-            nodes={nodes}
-            loading={isProxyViewPending}
-            unavailable={isProxyViewError}
-            busy={pendingKey !== null || verge.enable_tun_mode === true}
-            pendingKey={pendingKey}
-            onSelect={(group, node) => {
-              void select(group, node)
-            }}
-          />
-        ))
-      )}
-    </Stack>
+        </Stack>
+        {!verge ? (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <CircularProgress size={28} />
+          </Box>
+        ) : groups.length === 0 ? (
+          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center' }}>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              {t('rules.appRouting.emptyGroupsPage')}
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<SettingsOutlined />}
+              onClick={() => navigate('/app-rules')}
+            >
+              {t('rules.appRouting.manageGroups')}
+            </Button>
+          </Paper>
+        ) : (
+          groups.map((group) => (
+            <AppProxyGroup
+              key={group.id}
+              group={group}
+              nodes={nodes}
+              loading={isProxyViewPending}
+              unavailable={isProxyViewError}
+              busy={pendingKey !== null || verge.enable_tun_mode === true}
+              pendingKey={pendingKey}
+              onSelect={(group, node) => {
+                void select(group, node)
+              }}
+            />
+          ))
+        )}
+      </Stack>
+    </Box>
   )
 }

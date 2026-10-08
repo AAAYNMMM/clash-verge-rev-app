@@ -96,6 +96,7 @@ it('renders only user APP groups, matching nodes and the saved selection', () =>
     'office-1',
   ])
     expect(html).not.toContain(value)
+  expect(html).toContain('overflow-y:auto')
   expect(html.match(/role="radio"/g)).toHaveLength(2)
   expect(html.match(/aria-checked="true"/g)).toHaveLength(1)
 })
