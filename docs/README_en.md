@@ -1,77 +1,73 @@
 # Clash Verge Rev App
 
-<img src="../src-tauri/icons/icon.png" alt="Clash Verge Rev App" width="128">
+Independent fork of [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev), extending [Mihomo](https://github.com/MetaCubeX/mihomo) with **TUN-scoped, process-based outbound overrides**. Selected applications use manually pinned exits; all other traffic retains the configured Rule, Global, or Direct behavior. Not affiliated with the upstream release project.
 
-An independent fork of [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev), with **TUN-only APP routing overrides**, separate installation, configuration, services and branding. This is not an official upstream release.
+**Published artifact: `v2.5.13` · Windows x64 test prerelease.**
+[Release](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.13) · [Routing contract](APP_ROUTING.md) · [中文](../README.md) · [License](../LICENSE)
 
-**Current release: 2.5.13 — Windows x64 test build**
+## Routing architecture
 
-[Download](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.13) · [简体中文](../README.md) · [Routing reference](APP_ROUTING.md) · [Release notes](releases/v2.5.13.md) · [Changelog](../Changelog.md)
+APP routing is an independent overlay, not an additional mutually exclusive Mihomo mode. It becomes effective only when TUN is enabled and system proxy is disabled. Changing either transport condition disables the overlay without discarding group selections or the underlying outbound mode.
 
-## Install or upgrade
+~~~text
+           Mihomo routing engine
+                   │
+          Local destination rules
+                   │
+           TUN ingress condition
+           ┌───────┴────────┐
+           │                │
+      APP matches      Non-APP ingress
+           │                │
+     Fixed exit / Rule      │
+          └───────────┬─────┘
+                      │
+            Rule / Global / Direct
+~~~
 
-Download `Clash.Verge.Rev.App_2.5.13_x64-test-setup.exe`, exit the running fork, run the installer, accept the administrator prompt and keep the fork's current installation directory. Do not uninstall first or delete configuration. Upstream subscriptions are not imported automatically.
+- **Match precedence**: local destination exceptions, then ordered APP groups, then the default exit. The first enabled group matching an executable wins.
+- **Executable identity**: exact, escaped matching by process name or full executable path; rendered as Mihomo `PROCESS-NAME-REGEX` / `PROCESS-PATH-REGEX` rules.
+- **Pinned exits**: a group retains one manually selected node and provider identity. Missing, unusable, or unsupported exits fail closed; there is no implicit failover or fallback to Global, subscription rules, or Direct.
+- **Rule delegation**: a group can re-enter the original subscription rule chain without inheriting Global fallback from unrelated connections.
+- **Default exit**: unmatched connections continue to Rule, Global, or Direct, rather than becoming implicitly direct.
 
-2.5.13 fixes service installation/repair error `1007`. An upgrade replaces the installed fork service rather than just restarting an old copy. On a fresh installation without a service, use the in-app service installation prompt. Renamed upstream service executables are not compatible.
+When the overlay is active, the generated Mihomo config uses `mode: rule`. A configured Global default is modeled by an explicit `GLOBAL` selector for traffic not captured by an APP override. When the overlay is inactive, the core uses the native selected mode. The compiler is implemented in `src-tauri/src/enhance/app_routing.rs`.
 
-This release reuses the verified installer built from commit `06ba99a6` with the `fast-release` profile. Documentation updates do not alter its bytes. It is a **test prerelease**, not a fully optimized production build. Only Windows x64 is supplied; other platforms, portable and fixed-WebView2 installers are not included.
+## Components
 
-The `.sha256` file verifies integrity; `.sig` is the updater signature, not a Windows Authenticode signature. Download this prerelease manually; it is not advertised on the stable automatic-update channel. Automatic checks default to off, and uploading an installer alone does not create updater metadata.
-
-## Browser on an ordinary node; other apps on a residential node
-
-Disable the other client's system proxy and TUN. In this fork, disable System proxy, enable TUN, enable the independent **APP** toggle, and select **Global** as the default mode. Choose a residential node under **Default exit**. Use the right half of the sidebar Rules row to create a Browser group, add the browser executable, choose **Specific node**, and manually select an ordinary node.
-
-The browser's TUN connections use its APP node; other unmatched external connections use Global. Codex, Git and short-lived helpers therefore do not each need APP exceptions. Disable explicit proxy settings/extensions for apps meant to use TUN. AI websites inside the same browser process also follow the browser group; this is not per-tab routing.
-
-## Routing and interface
-
-APP is an independent switch, not a fourth mutually exclusive mode. **APP + Rule** and **APP + Global** are supported. The Proxies page has **APP groups** and **Default exit** views; changing views does not disable either layer. APP groups show only user-created groups and their filtered candidate nodes. The **Chain Proxy** button still opens the existing editor. Rules navigation is one row with two equal, independently selected click areas.
-
-Enabled groups match in order, first match wins. A group either delegates to the original Rule chain or pins one manually selected node. A failed, missing, renamed or UDP-incompatible pinned exit does not fall back to another node, Global, subscription rules or Direct. Rule-delegated groups retain the original rule chain even when the default is Global.
-
-Unmatched connections follow the default mode. While APP is active, the generated core configuration runs Rule mode and represents the Global default through a `GLOBAL` fallback. Disabling APP restores native mode behavior. Turning off TUN or turning on System proxy disables APP but preserves groups and the default mode; enabling TUN again does not automatically enable APP. Explicit HTTP/SOCKS ingress is excluded from APP overrides (`IN-TYPE,TUN`).
-
-Upgrading obsolete `mode: app` settings changes the base mode to Rule, preserves groups/nodes and requires explicitly enabling the independent APP switch. The old `unmatched` option is retired in favor of the base mode.
-
-### Applications and node filters
-
-Use the file picker, searchable multi-select running-program list or manual names/full paths. Full paths distinguish different installations. Directory-wide matching, automatic child-process inheritance and terminated-process history are not implemented.
-
-Node filtering uses **fancy-regex**, with lookaround and backreferences. Blank filters list all nodes; multiple lines form a union. Syntax errors or more than 100,000 backtracking attempts report errors. Filtering runs for preview, configuration generation and validation, not per packet; failed nodes never trigger automatic selection.
-
-### Local destination exceptions
-
-While APP is active, fixed local `DIRECT` rules precede APP overrides: loopback; `localhost`, `.local`, `.lan`; RFC1918 IPv4; IPv4 link-local; IPv6 ULA and link-local. This is not a TUN route exclusion or complete local-network detector.
-
-There is no separate toggle. IP rules use `no-resolve`, so arbitrary domains resolving to private addresses are not guaranteed to match. These exceptions may conflict with reaching remote private networks through a proxy. Unlike APP process rules, preliminary local rules are not restricted to TUN and also affect explicit proxy requests received by the same core. See the [exact scope](APP_ROUTING.md).
-
-## Independent Windows identity
-
-| Item | Value |
+| Boundary | Responsibility |
 | --- | --- |
-| Installation | `C:\Program Files\Clash Verge Rev App` |
-| Executable | `clash-verge-rev-app.exe` |
-| App/configuration/WebView ID | `io.github.aaaynmmm.clash-verge-rev-app` |
-| Configuration | `%APPDATA%\io.github.aaaynmmm.clash-verge-rev-app` |
-| Service | `clash_verge_rev_app_service` |
-| Service data | `%PROGRAMDATA%\cvr-app-service` |
-| Cores | `cvr-app-mihomo.exe`, `cvr-app-mihomo-alpha.exe` |
-| Import protocol | `clash-verge-rev-app://` |
-| Mixed / SOCKS / HTTP defaults | `17897` / `17898` / `17899`, when enabled |
-| Controller default | `19097`, when enabled |
-| TUN interface | `CVR-App-TUN` |
+| React / Tauri | Configuration, running-process picker, per-group node selection and state presentation |
+| Verge configuration | Persisted APP activation state, groups, and native fallback mode |
+| Config compiler | Composes ordered process predicates, locked selectors, and root rules |
+| Mihomo | TUN capture, process metadata, rule evaluation and outbound transport |
+| Independent privileged service | Runtime provisioning, IPC authorization, core lifecycle and service ownership |
 
-Registry entries, shortcuts, startup tasks, IPC, locks and caches use fork identities. Original `clash://` and `clash-verge://` registrations are not replaced. Do not install into the upstream directory.
+Candidate selection uses Rust `fancy-regex`, supporting lookaround and backreferences with a 100,000-backtracking limit. These expressions filter node names **only while editing or validating the configuration**; they are not evaluated per connection or per packet.
 
-Independent installation does not create separate OS-wide network settings. Only one client should manage TUN/system proxy at a time. Ownership checks cannot prevent another client from changing system settings later.
+### Constraints
 
-## Verification and limitations
+- Only `IN-TYPE,TUN` traffic is subject to APP overrides; explicit HTTP/SOCKS proxy ingress bypasses them.
+- Matching is by executable, not browser tab, URL, parent-process lineage, or installation directory.
+- The running-process picker is a snapshot, not a persistent process attribution engine.
+- Preceding local destination rules may override custom private-address routes in a subscription; see the [routing contract](APP_ROUTING.md).
+- Tests cover Mihomo parsing and isolated traffic cases, not a comprehensive production TUN end-to-end validation.
 
-Windows installation, protected service IPC and service-managed core startup were verified. APP/default routing passed real-core parsing and isolated routing checks, but complete live-TUN end-to-end testing has not been done. An automation-sandbox launch produced WebView2 `0x80070005`; service startup worked, and the effect on normal desktop launches was not established. Launch from the desktop/Start menu and preserve logs instead of deleting configuration.
+## Distribution and isolation
 
-## Development and license
+| Identity | Value |
+| --- | --- |
+| Windows application | `C:\Program Files\Clash Verge Rev App\clash-verge-rev-app.exe` |
+| Configuration root | `%APPDATA%\io.github.aaaynmmm.clash-verge-rev-app` |
+| Application ID | `io.github.aaaynmmm.clash-verge-rev-app` |
+| Windows service | `clash_verge_rev_app_service` |
+| Service / core binaries | `cvr-app-service` / `cvr-app-mihomo` |
+| URL scheme | `clash-verge-rev-app://` |
+| Mixed / SOCKS / HTTP listeners | `17897` / `17898` / `17899` |
+| Controller | `19097` |
 
-Follow [CONTRIBUTING.md](../CONTRIBUTING.md) and the pinned toolchain/package files. Run `pnpm install --frozen-lockfile`, `pnpm prebuild`, then `pnpm build`; `pnpm build:fast` is for testing. Rebuild all vendored service helpers after service source changes. Keep signing keys, subscriptions, configuration and logs out of release assets.
+The registry, service, IPC channel, instance lock, configuration, updater, and shortcuts are namespaced independently from upstream. Independent installations **do not** isolate OS-wide proxy and routing state; concurrent network ownership by two clients remains unsupported.
 
-Original authorship and GPL notices are retained. Built on Clash Verge Rev, Clash Verge, Mihomo, Tauri and Vite. See [LICENSE](../LICENSE) and [service provenance](../crates/clash-verge-rev-app-service/UPSTREAM.md). Report fork-specific issues to [this repository](https://github.com/AAAYNMMM/clash-verge-rev-app/issues). Other translated legacy pages and screenshots describe upstream, not this release.
+The published test release contains one Windows x64 NSIS installer, its SHA-256 checksum and its application updater signature. `.sig` is not an Authenticode signature. Helper executables must be built from `crates/clash-verge-rev-app-service` and cannot be replaced by renamed upstream service binaries.
+
+Source attribution and GPL obligations remain intact; see [LICENSE](../LICENSE) and [service provenance](../crates/clash-verge-rev-app-service/UPSTREAM.md).

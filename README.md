@@ -1,102 +1,82 @@
 # Clash Verge Rev App
 
-<img src="src-tauri/icons/icon.png" alt="Clash Verge Rev App" width="128">
+基于 [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) 与 [Mihomo](https://github.com/MetaCubeX/mihomo) 的独立分支。核心扩展是 **TUN 入站的进程级策略覆盖层**：为指定应用绑定独立的出站节点，其余流量仍遵循原有规则、全局或直连模式。该分支不是上游官方发行版。
 
-基于 [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) 的独立分支，提供 **TUN 下的 APP 分组优先分流**，使用独立名称、图标、安装目录、配置和后台服务。**不是上游官方发布。**
+**当前公开构建：`v2.5.13` · Windows x64 测试预发布。**
+[Release](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.13) · [路由机制](docs/APP_ROUTING.md) · [English](docs/README_en.md) · [License](LICENSE)
 
-**当前版本：2.5.13 · Windows x64 测试版**
+## 网络与路由模型
 
-[下载安装包](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.13) · [APP 使用说明](docs/APP_ROUTING.md) · [本版发布说明](docs/releases/v2.5.13.md) · [更新记录](Changelog.md) · [English](docs/README_en.md)
+APP 分流是叠加在 Mihomo 出站策略上的独立开关，不是第四种互斥的内核模式。它仅在 TUN 开启且系统代理关闭时激活；系统代理开启或 TUN 关闭会撤销覆盖层，保留分组配置及默认模式。
 
-## 安装与升级
+~~~text
+                   Mihomo
+                     │
+              Local destination exceptions
+                     │
+               IN-TYPE,TUN?
+                ┌────┴────┐
+               yes        no
+                │         │
+       Ordered APP groups │
+          │               │
+    ┌─────┴─────┐         │
+ fixed node   Rule        │
+    │           │         │
+ pinned exit    └────┬────┘
+                     │
+              Default outbound
+             Rule / Global / Direct
+~~~
 
-从本仓库 Releases 下载 `Clash.Verge.Rev.App_2.5.13_x64-test-setup.exe`。退出正在运行的 **Clash Verge Rev App**，运行安装包并确认 Windows 管理员授权，保持独立版已有目录即可覆盖升级；无需先卸载或删除配置。
+- **匹配优先级**：本地目标特例 → TUN APP 分组（按声明顺序，首个命中生效）→ 默认出口。
+- **进程判定**：对进程名或完整可执行路径进行精确字面量匹配，生成 Mihomo `PROCESS-NAME-REGEX` / `PROCESS-PATH-REGEX` 条件；不以父进程为依据。
+- **固定节点**：每组只使用手动选定的节点，保留订阅来源身份。节点缺失、不可用或协议不兼容时阻断，不转向其他节点、全局出口或直连。
+- **规则委托**：允许应用继续使用订阅原始规则链；即使默认出口设为全局，委托连接也不会重新进入全局兜底。
+- **未匹配应用**：由默认 `Rule`、`Global` 或 `Direct` 负责，APP 覆盖层不会将所有未分组进程强制直连。
 
-2.5.13 修复系统服务安装／修复反复报错 `1007` 的问题，覆盖升级会同步替换已安装的独立版服务，不再只是重启旧服务。首次安装且没有服务时，可在软件的服务提示中安装。不要用原版服务文件替换本版服务。
+实际合成配置运行于 Mihomo `rule` 模式：全局默认出口使用 `GLOBAL` 选择器模拟全局模式，订阅规则保留原有顶层顺序和语义。关闭 APP 覆盖层则恢复原生默认模式。实现见 `src-tauri/src/enhance/app_routing.rs`。
 
-本次复用代码提交 `06ba99a6` 构建并安装验证的 2.5.13 安装包，采用 `fast-release` 测试配置，文档更新不改变程序字节。仅提供 Windows x64 安装包，不表示其他平台、便携版或固定 WebView2 版本已发布。
+## 控制面与执行面
 
-Release 包含 `.sha256` 校验文件及 `.sig` 更新签名。**更新签名不等同于 Windows Authenticode 签名。** 本次为测试预发布，采用手动下载安装，不推送到稳定自动更新渠道。
-
-## 推荐配置：浏览器普通节点，其他程序家宽
-
-1. 关闭原版的系统代理和 TUN，避免同时接管网络；在独立版关闭系统代理、开启 TUN。
-2. 开启独立 **APP** 开关，默认模式选择 **全局**，在「默认出口」手动选择家宽节点。
-3. 点击侧栏「规则」一行右半边，新建「浏览器」组，添加浏览器程序，选择「指定节点」并手动选中普通节点。
-
-浏览器通过 TUN 的连接优先使用普通节点，其他未匹配 APP 分组的外网连接使用全局选中的家宽节点。无需逐个添加 Codex、Git 或短时间运行的辅助程序。
-
-用于 TUN 分流的程序应关闭自己的 HTTP／SOCKS 代理设置及代理扩展。显式代理入站不套用 APP 覆盖。同一浏览器里的 AI 网页也遵循浏览器组，这不是标签页分流。
-
-## 当前分流逻辑
-
-| 配置或连接 | 行为 |
+| 子系统 | 职责 |
 | --- | --- |
-| APP + 规则 | 命中应用使用分组出口，其余使用原有规则 |
-| APP + 全局 | 命中应用使用分组出口，其余使用 `GLOBAL` 当前节点 |
-| 分组选择「规则模式」 | 使用原有规则链及节点，不改走全局兜底 |
-| 分组选择固定节点 | 只用手动选择的节点，失效、缺失或不支持该连接时不回退 |
-| 关闭 APP | 保持默认规则／全局／直连模式原有行为 |
-| 关闭 TUN 或开启系统代理 | 停用 APP，保留分组、节点和默认模式；恢复 TUN 后需手动启用 APP |
+| React / Tauri GUI | 分组配置、节点候选筛选、手动选择及运行状态呈现 |
+| Verge 配置层 | 持久化 `enable_app_routing`、`app_routing.groups` 和默认模式；保证状态切换一致性 |
+| 路由配置生成器 | 将有序进程条件和固定出口合成为 Mihomo 规则与私有代理组 |
+| Mihomo | TUN 捕获、进程识别、规则决策及真正的数据转发 |
+| 独立系统服务 | 安装授权、服务端身份校验、受控内核生命周期及 IPC 通信 |
 
-APP 是独立开关，不是第四个互斥模式。「APP 分组／默认出口」是两个节点视图，切换视图不会关闭另一边。APP 视图只显示自建分组及其候选节点，不显示订阅的自动选择、故障转移等代理组。
+节点候选使用 Rust `fancy-regex`，支持环视和反向引用，并设置 100,000 次回溯限制。**表达式只在候选列表筛选与配置校验时执行，不参与逐连接或逐数据包转发。** 配置落地后由内核按已选节点转发。
 
-侧栏两项规则合并为 **【普通规则图标　规则　APP 图标】**，左右各半、独立点击与高亮。右上角保留「链式代理」及已有链式编辑功能；节点视图和 APP 开关分开管理。
+### 运行边界
 
-### 应用与节点筛选
+- APP 覆盖仅针对 `IN-TYPE,TUN`；显式 HTTP/SOCKS 入站不进入 APP 进程规则。
+- 同一个浏览器的不同标签页共享进程级路由策略；该功能不是基于 URL 或标签页的分流系统。
+- 主程序不自动继承目录外辅助进程的网络身份；运行程序列表是进程快照，并非子进程关系跟踪。
+- 本地直连特例位于 APP 规则之前，可能覆盖原订阅中刻意配置的私有网段代理路径；其完整范围和优先级见[路由机制](docs/APP_ROUTING.md)。
+- 现有验证覆盖内核配置解析与隔离路由行为；不等同于所有网卡及真实 TUN 环境的端到端验证。
 
-应用可从文件选择、运行程序列表搜索多选，或每行手动填写进程名／完整路径。完整路径区分同名程序的不同安装位置。当前没有目录自动覆盖、父子进程自动继承或已退出程序的历史选择。
+## 独立发行身份
 
-节点过滤使用 **fancy-regex**，支持前后查找和反向引用；留空列出全部节点，多行取并集。候选列表仍需手动选一个节点，不自动故障切换。回溯上限 100,000，错误或超限会提示。过滤只在预览、配置生成及校验时执行，不随数据包执行。
-
-### 本地地址优先直连
-
-APP 生效时，在 APP 分组之前插入固定本地目标 `DIRECT` 规则：回环地址、`localhost`／`.local`／`.lan`、IPv4 私有及链路本地地址、IPv6 ULA 及链路本地地址。这不是 TUN 路由排除，也不是完整本地网络识别。
-
-该功能目前没有独立开关；IP 规则带 `no-resolve`，任意域名解析到内网 IP 不保证命中。通过代理访问远端私有网段可能与这些前置规则冲突。本地规则不限定入站类型，同一内核收到的显式 HTTP／SOCKS 请求也受其影响；后面的 APP 进程规则才限定 `IN-TYPE,TUN`。详见 [范围与限制](docs/APP_ROUTING.md)。
-
-## 独立安装信息
-
-| 项目 | Clash Verge Rev App |
+| 标识 | 值 |
 | --- | --- |
-| Windows 默认安装目录 | `C:\Program Files\Clash Verge Rev App` |
+| Windows 安装根目录 | `C:\Program Files\Clash Verge Rev App` |
+| 配置根目录 | `%APPDATA%\io.github.aaaynmmm.clash-verge-rev-app` |
+| Tauri 标识 | `io.github.aaaynmmm.clash-verge-rev-app` |
 | 主程序 | `clash-verge-rev-app.exe` |
-| 应用／WebView／配置标识 | `io.github.aaaynmmm.clash-verge-rev-app` |
-| Windows 配置目录 | `%APPDATA%\io.github.aaaynmmm.clash-verge-rev-app` |
 | Windows 服务 | `clash_verge_rev_app_service` |
-| 服务数据目录 | `%PROGRAMDATA%\cvr-app-service` |
-| 内核 | `cvr-app-mihomo.exe`、`cvr-app-mihomo-alpha.exe` |
-| 导入协议 | `clash-verge-rev-app://` |
-| 混合／SOCKS／HTTP 默认端口 | `17897`／`17898`／`17899`，以实际启用项为准 |
-| 默认控制端口 | `19097`，以控制器开关为准 |
-| Windows TUN 设备 | `CVR-App-TUN` |
+| 服务 / 内核 | `cvr-app-service` / `cvr-app-mihomo` |
+| URL Scheme | `clash-verge-rev-app://` |
+| Mixed / SOCKS / HTTP | `17897` / `17898` / `17899` |
+| Controller | `19097` |
 
-注册表、卸载项、快捷方式、启动任务、服务通信、锁及更新缓存独立命名。不自动迁移原版订阅，不接管原版 `clash://` 和 `clash-verge://`，不要安装进原版目录。
+注册表项、快捷方式、服务 IPC、单实例与更新命名空间均与上游分离。两版可以独立安装、保存配置，但 Windows 的系统代理及网络路由依然是共享资源，不能由两个客户端同时接管。
 
-**独立安装不等于网络设置互不影响。** 两版可以保留，但系统代理或 TUN 应只由一个客户端接管。本版所有权检查不是跨客户端原子锁，不能阻止其他客户端修改系统设置。
+## 发布与构建
 
-## 验证范围
+公开 Release 包含 Windows x64 NSIS 测试安装程序、SHA-256 校验文件以及独立更新签名。`.sig` 用于应用更新验证，不代表 Windows Authenticode 签名。当前没有发布其他平台或稳定自动更新通道的对应资产。
 
-2.5.13 已完成 Windows 覆盖安装、真实服务通信及服务启动内核验证。APP + 规则／全局通过真实内核解析及隔离分流验证；**实际 TUN 接管下的完整端到端验证尚未完成**。
+构建通过 Tauri + Rust workspace + pnpm；独立服务与安装辅助程序来自 `crates/clash-verge-rev-app-service`，不可用上游同名服务二进制替代。受控 IPC 的协议兼容校验保持启用。
 
-自动化工具沙箱启动曾出现 WebView2 `0x80070005`（拒绝访问），当时服务内核运行正常，尚未确认正常桌面启动是否受影响。这与已修复的服务协议错误不同；遇到时先从桌面／开始菜单启动并保留日志，不要直接删除配置。
-
-## 开发与构建
-
-使用 `rust-toolchain.toml`、`package.json` 指定的工具版本及对应平台的 Tauri 构建依赖：
-
-```sh
-pnpm install --frozen-lockfile
-pnpm prebuild
-pnpm build
-```
-
-`prebuild` 从 `crates/clash-verge-rev-app-service` 编译服务及安装／卸载工具。服务源码改动后必须重跑，不能混装旧资源和新主程序。`pnpm build:fast` 是测试构建，不应当作性能优化后的正式发行构建。
-
-详见 [CONTRIBUTING.md](CONTRIBUTING.md)。自动更新检查默认关闭，上传安装包本身不会生成更新元数据。签名仅使用本分支配套密钥；不得提交私钥、用户配置、订阅或日志。
-
-## 来源与许可证
-
-保留原作者署名及 GPL 许可。基于 [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev)、[Clash Verge](https://github.com/zzzgydi/clash-verge)、[Mihomo](https://github.com/MetaCubeX/mihomo)、[Tauri](https://github.com/tauri-apps/tauri) 和 [Vite](https://github.com/vitejs/vite)，独立版使用自己的分流 A 图标及名称。
-
-参见 [LICENSE](LICENSE)、[服务来源](crates/clash-verge-rev-app-service/UPSTREAM.md)。请到 [本仓库 Issues](https://github.com/AAAYNMMM/clash-verge-rev-app/issues) 报告本分支问题。其他语言的历史上游说明及旧截图已标注，不应作为本版安装／分流说明。
+上游著作权与 GPL-3.0 声明保留；详见 [LICENSE](LICENSE) 及 [service provenance](crates/clash-verge-rev-app-service/UPSTREAM.md)。
