@@ -4,7 +4,8 @@ use serde_json::Value;
 use sha2::{Digest as _, Sha256};
 
 pub const OWNER_TOKEN_FILE_NAME: &str = ".cvr-app-service-owner-token";
-pub const SERVICE_PROTOCOL_HEADER: &str = "X-Clash Verge Rev App-Service-Protocol";
+// Wire identifiers are HTTP tokens, not display names.
+pub const SERVICE_PROTOCOL_HEADER: &str = "X-CVR-App-Service-Protocol";
 pub const SESSION_TOKEN_HEX_LEN: usize = 64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

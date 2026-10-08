@@ -602,27 +602,16 @@ FunctionEnd
 !macroend
 
 !macro StartVergeService
-  ; Check if the service exists
   SimpleSC::ExistsService "clash_verge_rev_app_service"
-  Pop $0  ; 0: service exists; other: service not exists
-  ; Service exists
+  Pop $0
   ${If} $0 == 0
-    Push $0
-    ; Check if the service is running
-    SimpleSC::ServiceIsRunning "clash_verge_rev_app_service"
-    Pop $0 ; returns an errorcode (<>0) otherwise success (0)
-    Pop $1 ; returns 1 (service is running) - returns 0 (service is not running)
-    ${If} $0 == 0
-      Push $0
-      ${If} $1 == 0
-        DetailPrint "Restart ${PRODUCTNAME} Service..."
-        SimpleSC::StartService "clash_verge_rev_app_service" "" 30
-      ${EndIf}
-    ${ElseIf} $0 != 0
-      Push $0
-      SimpleSC::GetErrorMessage
-      Pop $0
-      MessageBox MB_OK|MB_ICONSTOP "Check Service Status Error ($0)"
+    ; Restarting the ProgramData copy would retain the old IPC implementation.
+    DetailPrint "Updating ${PRODUCTNAME} Service..."
+    nsExec::ExecToLog '"$INSTDIR\resources\cvr-app-service-install.exe" --install-service'
+    Pop $0
+    ${If} $0 != 0
+      MessageBox MB_OK|MB_ICONSTOP "${PRODUCTNAME} Service update failed ($0). Close this installer and retry the update."
+      Abort
     ${EndIf}
   ${EndIf}
 !macroend

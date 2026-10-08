@@ -51,3 +51,38 @@ async fn running_server_reports_its_protocol_and_status() -> Result<()> {
 
     stop_server(server).await
 }
+
+#[tokio::test]
+#[serial]
+async fn installation_probe_validates_the_protocol_over_real_ipc() -> Result<()> {
+    use clash_verge_service_ipc::{
+        IPC_AUTH_EXPECT, IpcCommand, SERVICE_PROTOCOL_HEADER, ServiceErrorCode, connect, inspect_installation,
+    };
+    let server = start_server().await?;
+    let result: Result<()> = async {
+        let version = get_version().await?.data.context("version omitted data")?;
+        assert_eq!(version.protocol.epoch, PROTOCOL_EPOCH);
+        let inspection = inspect_installation(&[]).await?;
+        assert_eq!(inspection.protocol.protocol, version.protocol);
+        for protocol in [None, Some("0.0"), Some("2.0")] {
+            let client = connect().await?;
+            let request = client
+                .post(IpcCommand::InspectInstallation.as_ref())
+                .header("X-IPC-Magic", IPC_AUTH_EXPECT);
+            let request = match protocol {
+                Some(value) => request.header(SERVICE_PROTOCOL_HEADER, value),
+                None => request,
+            };
+            let response = request
+                .json_body(&serde_json::json!([]))
+                .send()
+                .await?
+                .json::<serde_json::Value>()?;
+            assert_eq!(response["code"], ServiceErrorCode::ProtocolMismatch as u16);
+        }
+        Ok(())
+    }
+    .await;
+    stop_server(server).await?;
+    result
+}

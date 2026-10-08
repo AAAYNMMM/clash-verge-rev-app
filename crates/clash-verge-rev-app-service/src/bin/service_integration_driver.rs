@@ -54,6 +54,7 @@ async fn probe_protocol() -> anyhow::Result<()> {
         if response.code != 0 || !info.supports_client(ProtocolVersion::current(), MIN_REQUIRED_SERVICE_REVISION) {
             anyhow::bail!("service protocol is not compatible");
         }
+        clash_verge_service_ipc::inspect_installation(&[]).await?;
         Ok(())
     }
     .await;

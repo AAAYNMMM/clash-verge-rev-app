@@ -1130,7 +1130,7 @@ dependencies = [
 
 [[package]]
 name = "clash-verge-rev-app"
-version = "2.5.12"
+version = "2.5.13"
 dependencies = [
  "aes-gcm",
  "anyhow",

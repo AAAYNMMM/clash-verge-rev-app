@@ -589,6 +589,8 @@ fn wait_for_service_ready() -> Result<(), Error> {
                         clash_verge_service_ipc::MIN_REQUIRED_SERVICE_REVISION,
                     )
                 })
+                // The version endpoint is unversioned; a protected probe must also succeed.
+                && clash_verge_service_ipc::inspect_installation(&[]).await.is_ok()
             {
                 break Ok(());
             }

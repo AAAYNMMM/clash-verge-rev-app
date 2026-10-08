@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync, existsSync } from 'node:fs'
 import test from 'node:test'
+import { validateHeaderName } from 'node:http'
 
 const read = (path) =>
   readFileSync(new URL('../' + path, import.meta.url), 'utf8')
@@ -73,6 +74,12 @@ test('GUI and compiled helpers share independent service, IPC and core namespace
   )
   assert.match(read(service + 'src/channel.rs'), /clash_verge_rev_app_service/)
   assert.match(read(service + 'src/channel.rs'), /cvr-app-service/)
+  const protocolHeader = read(service + 'src/core/structure.rs').match(
+    /SERVICE_PROTOCOL_HEADER: &str = "([^"]+)"/,
+  )?.[1]
+  assert.ok(protocolHeader)
+  assert.doesNotThrow(() => validateHeaderName(protocolHeader))
+
   assert.match(
     read(service + 'resources/info.plist.tmpl'),
     /<string>cvr-app-service<\/string>/,
@@ -124,6 +131,16 @@ test('install and uninstall never perform upstream cleanup or global TCP reset',
     )
   }
   assert.ok(installer.includes('!define MUI_UNICON "${INSTALLERICON}"'))
+  const serviceUpgrade = installer.match(
+    /!macro StartVergeService[\s\S]*?!macroend/,
+  )?.[0]
+  assert.ok(serviceUpgrade)
+  assert.match(
+    serviceUpgrade,
+    /cvr-app-service-install\.exe" --install-service/,
+  )
+  assert.doesNotMatch(serviceUpgrade, /SimpleSC::StartService/)
+
   assert.match(
     read('src-tauri/src/utils/schtasks.rs'),
     /TASK_NAME_USER: &str = "Clash Verge Rev App"/,
