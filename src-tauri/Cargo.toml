@@ -1,6 +1,6 @@
 [package]
 name = "clash-verge-rev-app"
-version = "2.5.9"
+version = "2.5.10"
 description = "Clash Verge Rev App - independent application routing client"
 authors = ["zzzgydi", "Tunglies", "wonfen", "MystiPanda"]
 license = "GPL-3.0-only"
@@ -69,6 +69,7 @@ boa_engine = "0.22.0"
 percent-encoding = "2.3.2"
 reqwest = { workspace = true }
 regex = { workspace = true }
+fancy-regex = "0.19.2"
 sysproxy = { git = "https://github.com/clash-verge-rev/sysproxy-rs.git", branch = "main", features = [
   "guard",
 ] }

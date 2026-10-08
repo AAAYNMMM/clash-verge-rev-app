@@ -238,6 +238,41 @@ mod tests {
     }
 
     #[test]
+    fn fancy_candidate_filters_do_not_change_the_forwarding_config() -> Result<()> {
+        for provider in [None, Some("chosen".into())] {
+            let mut config = fixture();
+            config.insert(
+                "proxy-providers".into(),
+                serde_yaml_ng::from_str("chosen: {type: inline, payload: []}")?,
+            );
+            let mut selected = group(
+                "ai",
+                AppTarget::Node {
+                    name: "home-1".into(),
+                    provider,
+                },
+            );
+            let baseline = apply(
+                config.clone(),
+                &AppRoutingConfig {
+                    groups: vec![selected.clone()],
+                    ..Default::default()
+                },
+            )?;
+            selected.node_patterns = vec![r"^(?=home-)(?!.*office)home-\d+$".into()];
+            let actual = apply(
+                config,
+                &AppRoutingConfig {
+                    groups: vec![selected],
+                    ..Default::default()
+                },
+            )?;
+            assert_eq!(actual, baseline);
+        }
+        Ok(())
+    }
+
+    #[test]
     fn pins_only_the_chosen_node_and_blocks_udp_fallthrough() {
         let result = apply(
             fixture(),

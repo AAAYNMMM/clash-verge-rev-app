@@ -1130,7 +1130,7 @@ dependencies = [
 
 [[package]]
 name = "clash-verge-rev-app"
-version = "2.5.9"
+version = "2.5.10"
 dependencies = [
  "aes-gcm",
  "anyhow",
@@ -1154,6 +1154,7 @@ dependencies = [
  "deelevate",
  "dirs 7.0.0",
  "dunce",
+ "fancy-regex",
  "flate2",
  "futures",
  "gethostname",
@@ -2314,6 +2315,17 @@ checksum = "8be9f3dfaaffdae2972880079a491a1a8bb7cbed0b8dd7a347f668b4150a3b93"
 dependencies = [
  "event-listener",
  "pin-project-lite",
+]
+
+[[package]]
+name = "fancy-regex"
+version = "0.19.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d301f5bf187b3c295fce6468d3875037a0bccc5f6b151c63cac2f85babf21912"
+dependencies = [
+ "bit-set",
+ "regex-automata",
+ "regex-syntax",
 ]
 
 [[package]]

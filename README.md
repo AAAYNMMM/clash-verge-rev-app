@@ -10,6 +10,10 @@ Select **APP** on the home page or proxy page. Open **APP Rules** in the sidebar
 
 A group can delegate to the existing **Rule mode**, use **Direct**, or pin one manually selected node. Rule delegation follows the original rule chain and its current proxy-group selections. A pinned node never fails over to another node or direct when it goes offline or disappears. Unmatched applications default to direct; the fallback is configurable. APP mode intentionally cannot be used with TUN. Enabling TUN while APP is active switches to ordinary Rule mode and disables APP until TUN is turned off. APP mode only routes connections sent to this client’s HTTP/SOCKS proxy ports; it does not transparently capture applications that ignore system or explicit proxy settings.
 
+Node filtering uses `fancy-regex`, including lookaround and backreferences. Preview and saved-node validation share the same engine, with a limit of 100,000 backtracking attempts. Invalid or over-complex expressions report an error rather than silently returning no matches. Each expression is compiled once per filtering request and reused across node names. These candidate expressions are never sent to Mihomo or evaluated on each connection; the core still receives only process rules and the manually selected node.
+
+The top-right **Chain Proxy** button opens the existing chain editor in every mode, including APP (using its underlying Rule mode). Closing it returns to the APP group view without switching routing mode. Manage APP groups through **APP Rules** in the sidebar.
+
 ## Independent identity
 
 | Item | Clash Verge Rev App |

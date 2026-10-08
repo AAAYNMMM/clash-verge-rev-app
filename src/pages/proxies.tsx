@@ -1,14 +1,8 @@
-import {
-  LanOutlined,
-  LanRounded,
-  SettingsOutlined,
-  WarningRounded,
-} from '@mui/icons-material'
+import { LanOutlined, LanRounded, WarningRounded } from '@mui/icons-material'
 import { Box, Button, ButtonGroup } from '@mui/material'
 import { useLockFn } from 'ahooks'
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router'
 
 import { AppProxyGroups } from '@/components/app-rules/app-proxy-groups'
 import { BasePage, TooltipIcon } from '@/components/base'
@@ -42,7 +36,6 @@ const isMode = (value: unknown): value is Mode =>
 
 const ProxyPage = () => {
   const { t } = useTranslation()
-  const navigate = useNavigate()
 
   // 从 localStorage 恢复链式代理按钮状态
   const [isChainMode, setIsChainMode] = useState(() => {
@@ -72,7 +65,6 @@ const ProxyPage = () => {
   const normalizedMode = clashConfig?.mode?.toLowerCase()
   const curMode = resolveProxyMode(savedMode, normalizedMode, tunEnabled)
   const isAppMode = curMode === 'app'
-  const showChainMode = !isAppMode && isChainMode
   const chainWarning = t('proxies.page.chain.warning')
 
   const onChangeMode = useLockFn(async (mode: Mode) => {
@@ -163,9 +155,7 @@ const ProxyPage = () => {
       full
       contentStyle={{ height: '100%' }}
       title={
-        isAppMode ? (
-          t('rules.appRouting.groupsPageTitle')
-        ) : isChainMode ? (
+        isChainMode ? (
           <Box
             component="span"
             data-tauri-drag-region="true"
@@ -179,6 +169,8 @@ const ProxyPage = () => {
               sx={{ p: 0.25 }}
             />
           </Box>
+        ) : isAppMode ? (
+          t('rules.appRouting.groupsPageTitle')
         ) : (
           t('proxies.page.title.default')
         )
@@ -206,40 +198,31 @@ const ProxyPage = () => {
             ))}
           </ButtonGroup>
 
-          {isAppMode ? (
-            <Button
-              size="small"
-              startIcon={<SettingsOutlined />}
-              onClick={() => navigate('/app-rules')}
-            >
-              {t('rules.appRouting.manageGroups')}
-            </Button>
-          ) : (
-            <Button
-              size="small"
-              variant={isChainMode ? 'contained' : 'outlined'}
-              onClick={onToggleChainMode}
-              sx={{ ml: 1 }}
-              startIcon={
-                isChainMode ? (
-                  <LanRounded fontSize="small" />
-                ) : (
-                  <LanOutlined fontSize="small" />
-                )
-              }
-            >
-              {t('proxies.page.actions.toggleChain')}
-            </Button>
-          )}
+          <Button
+            size="small"
+            variant={isChainMode ? 'contained' : 'outlined'}
+            aria-pressed={isChainMode}
+            onClick={onToggleChainMode}
+            sx={{ ml: 1 }}
+            startIcon={
+              isChainMode ? (
+                <LanRounded fontSize="small" />
+              ) : (
+                <LanOutlined fontSize="small" />
+              )
+            }
+          >
+            {t('proxies.page.actions.toggleChain')}
+          </Button>
         </Box>
       }
     >
-      {isAppMode ? (
+      {isAppMode && !isChainMode ? (
         <AppProxyGroups />
       ) : (
         <ProxyGroups
           mode={coreProxyMode(curMode ?? 'rule')}
-          isChainMode={showChainMode}
+          isChainMode={isChainMode}
           chainConfigData={chainConfigData}
         />
       )}
