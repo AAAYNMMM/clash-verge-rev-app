@@ -58,7 +58,7 @@ launchGuard:
   move: 이동
   ok: 확인
 tray:
-  appMode: APP
+  appMode: APP routing
   dashboard: 대시보드
   ruleMode: 규칙 모드
   globalMode: 전역 모드

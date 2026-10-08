@@ -58,7 +58,7 @@ launchGuard:
   move: 移动
   ok: 好
 tray:
-  appMode: APP
+  appMode: APP 分流
   dashboard: 仪表板
   ruleMode: 规则模式
   globalMode: 全局模式

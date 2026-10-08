@@ -1,4 +1,4 @@
-use crate::config::app_routing::{AppMatchKind, AppMatcher, AppRoutingConfig, AppTarget, UnmatchedPolicy};
+use crate::config::app_routing::{AppMatchKind, AppMatcher, AppRoutingConfig, AppTarget};
 use anyhow::{Result, bail};
 use serde_yaml_ng::{Mapping, Value};
 
@@ -92,21 +92,67 @@ fn locked_group(config: &Mapping, id: &str, name: &str, provider: &Option<String
     Value::Mapping(group)
 }
 
-pub fn apply(mut config: Mapping, routing: &AppRoutingConfig) -> Result<Mapping> {
-    if config.get("mode").and_then(Value::as_str) != Some("app") {
-        return Ok(config);
+// These exceptions protect local IPC/LAN destinations before any APP or default exit.
+const LOCAL_RULES: &[&str] = &[
+    "IP-CIDR,127.0.0.0/8,DIRECT,no-resolve",
+    "IP-CIDR6,::1/128,DIRECT,no-resolve",
+    "DOMAIN-SUFFIX,localhost,DIRECT",
+    "DOMAIN-SUFFIX,local,DIRECT",
+    "DOMAIN-SUFFIX,lan,DIRECT",
+    "IP-CIDR,10.0.0.0/8,DIRECT,no-resolve",
+    "IP-CIDR,172.16.0.0/12,DIRECT,no-resolve",
+    "IP-CIDR,192.168.0.0/16,DIRECT,no-resolve",
+    "IP-CIDR,169.254.0.0/16,DIRECT,no-resolve",
+    "IP-CIDR6,fc00::/7,DIRECT,no-resolve",
+    "IP-CIDR6,fe80::/10,DIRECT,no-resolve",
+];
+
+fn preserve_global_members(config: &Mapping, groups: &mut Vec<Value>) {
+    if groups
+        .iter()
+        .any(|group| group.get("name").and_then(Value::as_str) == Some("GLOBAL"))
+    {
+        return;
     }
-    config.insert("mode".into(), "rule".into());
-    // Enforce the policy even for restored configurations that still contain both switches.
-    if config
-        .get("tun")
-        .and_then(|tun| tun.get("enable"))
-        .and_then(Value::as_bool)
-        == Some(true)
+    // Freeze the original built-in membership before adding private APP selectors.
+    let mut members = vec![Value::from("DIRECT"), Value::from("REJECT")];
+    for item in config
+        .get("proxies")
+        .and_then(Value::as_sequence)
+        .into_iter()
+        .flatten()
+        .chain(groups.iter())
+    {
+        if matches!(item.get("type").and_then(Value::as_str), Some("pass" | "pass-rule")) {
+            continue;
+        }
+        if let Some(name) = item.get("name").and_then(Value::as_str) {
+            members.push(name.into());
+        }
+    }
+    let mut global = Mapping::new();
+    global.insert("name".into(), "GLOBAL".into());
+    global.insert("type".into(), "select".into());
+    global.insert("proxies".into(), members.into());
+    groups.push(global.into());
+}
+
+pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> Result<Mapping> {
+    if config.get("mode").and_then(Value::as_str) == Some("app") {
+        config.insert("mode".into(), "rule".into());
+    }
+    if !enabled
+        || config
+            .get("tun")
+            .and_then(|tun| tun.get("enable"))
+            .and_then(Value::as_bool)
+            != Some(true)
     {
         return Ok(config);
     }
+    let base_mode = config.get("mode").and_then(Value::as_str).unwrap_or("rule").to_owned();
     routing.validate()?;
+    config.insert("mode".into(), "rule".into());
     config.insert("find-process-mode".into(), "always".into());
 
     let original_rules = config
@@ -130,10 +176,8 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig) -> Result<Mapping>
         bail!("Proxy names starting with {GROUP_PREFIX} are reserved for APP routing");
     }
 
-    let mut rules = vec![
-        Value::from("IP-CIDR,127.0.0.0/8,DIRECT,no-resolve"),
-        Value::from("IP-CIDR6,::1/128,DIRECT,no-resolve"),
-    ];
+    preserve_global_members(&config, &mut groups);
+    let mut rules: Vec<Value> = LOCAL_RULES.iter().map(|rule| Value::from(*rule)).collect();
     let mut claimed = Vec::new();
     let mut rule_apps = Vec::new();
     for group in routing
@@ -142,13 +186,15 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig) -> Result<Mapping>
         .filter(|group| group.enabled && !group.apps.is_empty())
     {
         let conditions: Vec<_> = group.apps.iter().map(process_condition).collect();
-        let condition = if claimed.is_empty() {
+        let process = if claimed.is_empty() {
             any(&conditions)
         } else {
             logical("AND", &[any(&conditions), logical("NOT", &[any(&claimed)])])
         };
+        // System/explicit HTTP and SOCKS requests must never enter APP overrides.
+        let condition = logical("AND", &["IN-TYPE,TUN".into(), process]);
         match &group.target {
-            AppTarget::Rule => rule_apps.extend(conditions.iter().cloned()),
+            AppTarget::Rule => rule_apps.push(condition.clone()),
             AppTarget::Direct => rules.push(format!("{condition},DIRECT").into()),
             AppTarget::Node { name, provider } => {
                 groups.push(locked_group(&config, &group.id, name, provider));
@@ -160,11 +206,17 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig) -> Result<Mapping>
         }
         claimed.extend(conditions);
     }
-    if routing.unmatched == UnmatchedPolicy::Direct {
-        if rule_apps.is_empty() {
-            rules.push("MATCH,DIRECT".into());
+    if base_mode != "rule" {
+        let condition = if rule_apps.is_empty() {
+            "MATCH".into()
         } else {
-            rules.push(format!("{},DIRECT", logical("NOT", &[any(&rule_apps)])).into());
+            logical("NOT", &[any(&rule_apps)])
+        };
+        let target = if base_mode == "global" { "GLOBAL" } else { "DIRECT" };
+        rules.push(format!("{condition},{target}").into());
+        // A global UDP-incompatible/PASS exit cannot fall into the subscription's rule chain.
+        if base_mode == "global" {
+            rules.push(format!("{condition},REJECT").into());
         }
     }
     // Keep the original rule chain at root. Moving it into SUB-RULE would change
@@ -182,6 +234,19 @@ mod tests {
     use super::*;
     use crate::config::app_routing::AppRoutingGroup;
 
+    fn apply(config: Mapping, routing: &AppRoutingConfig) -> Result<Mapping> {
+        super::apply(config, routing, true)
+    }
+
+    fn locked(result: &Mapping) -> &Value {
+        result["proxy-groups"]
+            .as_sequence()
+            .expect("groups")
+            .iter()
+            .find(|group| group["name"] == Value::from("__CV_APP_ai"))
+            .expect("APP group")
+    }
+
     fn group(id: &str, target: AppTarget) -> AppRoutingGroup {
         AppRoutingGroup {
             id: id.into(),
@@ -197,7 +262,7 @@ mod tests {
     }
 
     fn fixture() -> Mapping {
-        serde_yaml_ng::from_str("mode: app\nproxies:\n- {name: home-1, type: socks5}\n- {name: home-2, type: socks5}\nrules: ['DOMAIN,example.com,PASS', 'MATCH,normal']\nproxy-groups:\n- {name: normal, type: select, proxies: [home-2]}\n").expect("fixture")
+        serde_yaml_ng::from_str("mode: rule\ntun: {enable: true}\nproxies:\n- {name: home-1, type: socks5}\n- {name: home-2, type: socks5}\nrules: ['DOMAIN,example.com,PASS', 'MATCH,normal']\nproxy-groups:\n- {name: normal, type: select, proxies: [home-2]}\n").expect("fixture")
     }
 
     fn fixed() -> AppTarget {
@@ -208,33 +273,70 @@ mod tests {
     }
 
     #[test]
-    fn tun_does_not_compile_app_rules_or_validate_inactive_node_filters() {
-        let mut config = fixture();
-        config.insert("tun".into(), serde_yaml_ng::from_str("{enable: true}").expect("tun"));
+    fn inactive_or_non_tun_config_never_compiles_app_overrides() {
         let mut invalid = group("ai", fixed());
         invalid.node_patterns = vec!["[".into()];
-        let original_rules = config["rules"].clone();
+        let routing = AppRoutingConfig { groups: vec![invalid] };
+        let config = fixture();
+        assert_eq!(super::apply(config.clone(), &routing, false).expect("inactive"), config);
+        let mut no_tun = config;
+        no_tun.insert("tun".into(), serde_yaml_ng::from_str("{enable: false}").expect("tun"));
+        assert_eq!(super::apply(no_tun.clone(), &routing, true).expect("no tun"), no_tun);
+    }
+
+    #[test]
+    fn global_fallback_follows_app_matches_and_never_replaces_them() {
+        let mut config = fixture();
+        config.insert("mode".into(), "global".into());
         let result = apply(
             config,
             &AppRoutingConfig {
-                groups: vec![invalid],
-                ..Default::default()
+                groups: vec![group("ai", fixed())],
             },
         )
-        .expect("tun");
+        .expect("compile");
+        let rules = result["rules"].as_sequence().expect("rules");
         assert_eq!(result["mode"], Value::from("rule"));
-        assert_eq!(result["rules"], original_rules);
-        assert!(!result.contains_key("find-process-mode"));
-        let mut rule = group("browser", AppTarget::Rule);
-        rule.node_patterns = vec!["[".into()];
         assert!(
-            AppRoutingConfig {
-                groups: vec![rule],
-                ..Default::default()
-            }
-            .validate()
-            .is_ok()
+            rules[LOCAL_RULES.len()]
+                .as_str()
+                .expect("app rule")
+                .contains("IN-TYPE,TUN")
         );
+        assert_eq!(rules[LOCAL_RULES.len() + 2], Value::from("MATCH,GLOBAL"));
+        assert_eq!(rules[LOCAL_RULES.len() + 3], Value::from("MATCH,REJECT"));
+        let global = result["proxy-groups"]
+            .as_sequence()
+            .expect("groups")
+            .iter()
+            .find(|g| g["name"] == Value::from("GLOBAL"))
+            .expect("global");
+        assert!(
+            !global["proxies"]
+                .as_sequence()
+                .expect("members")
+                .iter()
+                .any(|n| n.as_str().unwrap_or_default().starts_with(GROUP_PREFIX))
+        );
+    }
+
+    #[test]
+    fn rule_delegation_under_global_is_gated_and_exhaustion_does_not_reenter_global() {
+        let mut config = fixture();
+        config.insert("mode".into(), "global".into());
+        let original = config["rules"].as_sequence().expect("rules").clone();
+        let result = apply(
+            config,
+            &AppRoutingConfig {
+                groups: vec![group("browser", AppTarget::Rule), group("ai", fixed())],
+            },
+        )
+        .expect("compile");
+        let rules = result["rules"].as_sequence().expect("rules");
+        let fallback = rules[LOCAL_RULES.len() + 2].as_str().expect("global gate");
+        assert!(fallback.starts_with("NOT,") && fallback.contains("IN-TYPE,TUN") && fallback.ends_with(",GLOBAL"));
+        assert_eq!(&rules[rules.len() - 3..rules.len() - 1], original.as_slice());
+        assert_eq!(rules.last(), Some(&Value::from("MATCH,DIRECT")));
     }
 
     #[test]
@@ -256,17 +358,10 @@ mod tests {
                 config.clone(),
                 &AppRoutingConfig {
                     groups: vec![selected.clone()],
-                    ..Default::default()
                 },
             )?;
             selected.node_patterns = vec![r"^(?=home-)(?!.*office)home-\d+$".into()];
-            let actual = apply(
-                config,
-                &AppRoutingConfig {
-                    groups: vec![selected],
-                    ..Default::default()
-                },
-            )?;
+            let actual = apply(config, &AppRoutingConfig { groups: vec![selected] })?;
             assert_eq!(actual, baseline);
         }
         Ok(())
@@ -278,17 +373,26 @@ mod tests {
             fixture(),
             &AppRoutingConfig {
                 groups: vec![group("ai", fixed())],
-                ..Default::default()
             },
         )
         .expect("compile");
         assert_eq!(result["mode"], Value::from("rule"));
         assert_eq!(result["find-process-mode"], Value::from("always"));
-        let locked = &result["proxy-groups"][1];
+        let locked = locked(&result);
         assert_eq!(locked["proxies"], Value::Sequence(vec!["home-1".into()]));
         assert_eq!(locked["empty-fallback"], Value::from("REJECT"));
-        assert!(result["rules"][2].as_str().expect("rule").ends_with(",__CV_APP_ai"));
-        assert!(result["rules"][3].as_str().expect("rule").ends_with(",REJECT"));
+        assert!(
+            result["rules"][LOCAL_RULES.len()]
+                .as_str()
+                .expect("rule")
+                .ends_with(",__CV_APP_ai")
+        );
+        assert!(
+            result["rules"][LOCAL_RULES.len() + 1]
+                .as_str()
+                .expect("rule")
+                .ends_with(",REJECT")
+        );
     }
 
     #[test]
@@ -299,14 +403,10 @@ mod tests {
             config,
             &AppRoutingConfig {
                 groups: vec![group("ai", fixed())],
-                ..Default::default()
             },
         )
         .expect("compile");
-        assert_eq!(
-            result["proxy-groups"][1]["proxies"],
-            Value::Sequence(vec!["REJECT".into()])
-        );
+        assert_eq!(locked(&result)["proxies"], Value::Sequence(vec!["REJECT".into()]));
     }
 
     #[test]
@@ -325,11 +425,10 @@ mod tests {
             config,
             &AppRoutingConfig {
                 groups: vec![group("ai", target)],
-                ..Default::default()
             },
         )
         .expect("compile");
-        let locked = &result["proxy-groups"][1];
+        let locked = locked(&result);
         assert_eq!(locked["use"], Value::Sequence(vec!["chosen".into()]));
         assert_eq!(locked["filter"], Value::from("^home-1$"));
         assert_eq!(locked["empty-fallback"], Value::from("REJECT"));
@@ -343,12 +442,11 @@ mod tests {
             config,
             &AppRoutingConfig {
                 groups: vec![group("browser", AppTarget::Rule), group("ai", fixed())],
-                ..Default::default()
             },
         )
         .expect("compile");
         let rules = result["rules"].as_sequence().expect("rules");
-        assert!(rules[2].as_str().expect("guard").contains("NOT"));
+        assert!(rules[LOCAL_RULES.len()].as_str().expect("guard").contains("NOT"));
         assert_eq!(&rules[rules.len() - 3..rules.len() - 1], original.as_slice());
         assert_eq!(result["proxy-groups"][0]["name"], Value::from("normal"));
     }
@@ -358,20 +456,13 @@ mod tests {
         let mut normal = fixture();
         normal.insert("mode".into(), "global".into());
         assert_eq!(
-            apply(normal.clone(), &AppRoutingConfig::default()).expect("compile"),
+            super::apply(normal.clone(), &AppRoutingConfig::default(), false).expect("compile"),
             normal
         );
         let mut disabled = group("ai", fixed());
         disabled.enabled = false;
-        let result = apply(
-            fixture(),
-            &AppRoutingConfig {
-                groups: vec![disabled],
-                ..Default::default()
-            },
-        )
-        .expect("compile");
-        assert_eq!(result["proxy-groups"].as_sequence().expect("groups").len(), 1);
+        let result = apply(fixture(), &AppRoutingConfig { groups: vec![disabled] }).expect("compile");
+        assert_eq!(result["proxy-groups"].as_sequence().expect("groups").len(), 2);
     }
 
     #[test]
@@ -385,13 +476,6 @@ mod tests {
         }
         let mut invalid = group("ai", fixed());
         invalid.node_patterns = vec!["[".into()];
-        assert!(
-            AppRoutingConfig {
-                groups: vec![invalid],
-                ..Default::default()
-            }
-            .validate()
-            .is_err()
-        );
+        assert!(AppRoutingConfig { groups: vec![invalid] }.validate().is_err());
     }
 }

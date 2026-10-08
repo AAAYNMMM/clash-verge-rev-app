@@ -71,6 +71,9 @@ pub struct IVerge {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_routing: Option<super::app_routing::AppRoutingConfig>,
 
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub enable_app_routing: Option<bool>,
+
     pub enable_tun_mode: Option<bool>,
 
     pub enable_auto_launch: Option<bool>,
@@ -298,6 +301,23 @@ impl IVerge {
         config_draft.apply();
     }
 
+    pub fn app_routing_available(&self) -> bool {
+        self.enable_tun_mode == Some(true) && self.enable_system_proxy != Some(true)
+    }
+
+    pub fn app_routing_active(&self) -> bool {
+        self.enable_app_routing == Some(true) && self.app_routing_available()
+    }
+
+    pub fn disable_unavailable_app_routing(&mut self) -> bool {
+        if self.enable_app_routing == Some(true) && !self.app_routing_available() {
+            self.enable_app_routing = Some(false);
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn get_valid_clash_core(&self) -> String {
         self.clash_core.clone().unwrap_or_else(|| "cvr-app-mihomo".into())
     }
@@ -438,6 +458,7 @@ impl IVerge {
         patch!(tun_tray_icon);
 
         patch!(app_routing);
+        patch!(enable_app_routing);
         patch!(enable_tun_mode);
         patch!(enable_auto_launch);
         patch!(enable_silent_start);

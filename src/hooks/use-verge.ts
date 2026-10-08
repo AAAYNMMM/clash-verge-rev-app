@@ -45,7 +45,10 @@ export const useVerge = () => {
     await mutate(() => patchVergeConfig(value), {
       id: 'patch-verge-config',
       revalidate:
-        value.enable_tun_mode !== undefined
+        value.enable_tun_mode !== undefined ||
+        value.enable_system_proxy !== undefined ||
+        value.enable_app_routing !== undefined ||
+        value.app_routing !== undefined
           ? [
               ['getVergeConfig'],
               ['getClashMode'],

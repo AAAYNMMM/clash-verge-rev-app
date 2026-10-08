@@ -83,14 +83,17 @@ impl Config {
         clash_verge_i18n::sync_locale(verge.language.as_deref());
         let _config_write = Self::lock_config_write().await;
         let clash = Self::clash().await;
-        if verge.enable_tun_mode == Some(true) && clash.data_arc().get_mode().as_deref() == Some("app") {
-            let transaction = clash_verge_draft::DraftTransaction::begin(vec![&clash])?;
-            clash.edit_draft(|draft| {
-                draft.disable_app_mode_for_tun(true);
-            });
+        let verge_draft = Self::verge().await;
+        let transaction = clash_verge_draft::DraftTransaction::begin(vec![&clash, &verge_draft])?;
+        let legacy = clash.edit_draft(|draft| draft.migrate_legacy_app_mode());
+        let disabled = verge_draft.edit_draft(|draft| draft.disable_unavailable_app_routing());
+        if legacy {
             clash.latest_arc().save_config().await?;
-            transaction.commit();
         }
+        if disabled {
+            verge_draft.latest_arc().save_file().await?;
+        }
+        transaction.commit();
 
         Ok(())
     }
@@ -99,6 +102,7 @@ impl Config {
         let verge = Self::verge().await;
         verge.edit_draft(|draft| {
             draft.enable_tun_mode = Some(false);
+            draft.enable_app_routing = Some(false);
         });
         verge.apply();
         verge.data_arc().save_file().await?;

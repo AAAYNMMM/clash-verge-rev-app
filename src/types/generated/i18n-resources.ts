@@ -624,6 +624,8 @@ export interface TranslationResources {
         chooseRunningApps: string
         connectionHelp: string
         currentProfile: string
+        defaultExit: string
+        defaultModeHelp: string
         defaultPolicy: string
         deleteConfirm: string
         deleteGroup: string
@@ -654,9 +656,11 @@ export interface TranslationResources {
         noApplications: string
         nodePatterns: string
         nodesUnavailable: string
+        nodeViews: string
         noGroupNodes: string
         noRunningApps: string
         outsideFilter: string
+        overlayHelp: string
         patternsHelp: string
         priority: string
         processCount: string
@@ -678,6 +682,7 @@ export interface TranslationResources {
         selectNode: string
         timeout: string
         title: string
+        toggle: string
         trafficHelp: string
         tunDisabled: string
         unavailable: string

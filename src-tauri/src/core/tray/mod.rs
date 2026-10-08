@@ -661,8 +661,8 @@ async fn create_tray_menu(
         app_handle,
         MenuIds::APP_MODE,
         &texts.app_mode,
-        !verge_settings.enable_tun_mode.unwrap_or(false),
-        current_proxy_mode == "app",
+        verge_settings.app_routing_available(),
+        verge_settings.app_routing_active(),
         None::<&str>,
     )?;
 
@@ -697,12 +697,16 @@ async fn create_tray_menu(
         None
     } else {
         let current_mode_text = match current_proxy_mode {
-            "app" => clash_verge_i18n::t!("tray.appMode"),
             "global" => clash_verge_i18n::t!("tray.global"),
             "direct" => clash_verge_i18n::t!("tray.direct"),
             _ => clash_verge_i18n::t!("tray.rule"),
         };
-        let outbound_modes_label = format!("{} ({})", texts.outbound_modes, current_mode_text);
+        let app_suffix = if verge_settings.app_routing_active() {
+            " + APP"
+        } else {
+            ""
+        };
+        let outbound_modes_label = format!("{} ({}{app_suffix})", texts.outbound_modes, current_mode_text);
         Some(Submenu::with_id_and_items(
             app_handle,
             MenuIds::OUTBOUND_MODES,
@@ -931,7 +935,21 @@ fn on_menu_event(_: &AppHandle, event: MenuEvent) {
     }
     AsyncHandler::spawn(|| async move {
         match event.id.as_ref() {
-            mode @ (MenuIds::APP_MODE | MenuIds::RULE_MODE | MenuIds::GLOBAL_MODE | MenuIds::DIRECT_MODE) => {
+            MenuIds::APP_MODE => {
+                let enabled = !Config::verge().await.data_arc().app_routing_active();
+                logging_error!(
+                    Type::Config,
+                    feat::patch_verge(
+                        &crate::config::IVerge {
+                            enable_app_routing: Some(enabled),
+                            ..Default::default()
+                        },
+                        false
+                    )
+                    .await
+                );
+            }
+            mode @ (MenuIds::RULE_MODE | MenuIds::GLOBAL_MODE | MenuIds::DIRECT_MODE) => {
                 if let Some(final_mode) = mode.strip_circumfix("tray_", "_mode") {
                     logging!(info, Type::ProxyMode, "Switch Proxy Mode To: {}", final_mode);
                     let _ = feat::change_clash_mode(final_mode.into()).await;

@@ -19,7 +19,6 @@ export interface AppRoutingGroup {
 
 export interface AppRoutingConfig {
   groups: AppRoutingGroup[]
-  unmatched: 'direct' | 'rule'
 }
 
 export interface RunningApp {

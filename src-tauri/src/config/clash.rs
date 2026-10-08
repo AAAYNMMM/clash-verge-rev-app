@@ -153,8 +153,8 @@ impl IClashTemp {
         }
     }
 
-    pub fn disable_app_mode_for_tun(&mut self, tun_enabled: bool) -> bool {
-        if tun_enabled && self.0.get("mode").and_then(Value::as_str) == Some("app") {
+    pub fn migrate_legacy_app_mode(&mut self) -> bool {
+        if self.0.get("mode").and_then(Value::as_str) == Some("app") {
             self.0.insert("mode".into(), "rule".into());
             true
         } else {
@@ -442,17 +442,16 @@ pub struct IClashFallbackFilter {
 }
 
 #[cfg(test)]
-mod app_tun_mode_tests {
+mod app_mode_migration_tests {
     use super::IClashTemp;
 
     #[test]
-    fn tun_drops_only_app_mode_and_never_restores_it_on_disable() {
+    fn legacy_app_mode_becomes_rule_without_changing_existing_base_modes() {
         for mode in ["app", "rule", "global", "direct"] {
             let mut config = IClashTemp::default();
             config.0.insert("mode".into(), mode.into());
-            assert!(!config.disable_app_mode_for_tun(false));
-            assert_eq!(config.disable_app_mode_for_tun(true), mode == "app");
-            assert!(!config.disable_app_mode_for_tun(false));
+            assert_eq!(config.migrate_legacy_app_mode(), mode == "app");
+            assert!(!config.migrate_legacy_app_mode());
             assert_eq!(
                 config.get_mode().as_deref(),
                 Some(if mode == "app" { "rule" } else { mode })

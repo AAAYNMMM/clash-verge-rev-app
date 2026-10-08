@@ -1,4 +1,4 @@
-export const PROXY_MODES = ['app', 'rule', 'global', 'direct'] as const
+export const PROXY_MODES = ['rule', 'global', 'direct'] as const
 export type ProxyMode = (typeof PROXY_MODES)[number]
 
 export const parseProxyMode = (
@@ -11,17 +11,19 @@ export const parseProxyMode = (
 export const resolveProxyMode = (
   saved?: string | null,
   running?: string | null,
-  tunEnabled: boolean = false,
+  appActive: boolean = false,
 ): ProxyMode | undefined => {
   const core = parseProxyMode(running)
-  const source = parseProxyMode(saved)
-  const resolved =
-    source === 'app' && (!core || core === 'rule') ? 'app' : (core ?? source)
-  return tunEnabled && resolved === 'app' ? 'rule' : resolved
+  const source = parseProxyMode(saved === 'app' ? 'rule' : saved)
+  // APP overlays use the rule engine even when the user's default exit is GLOBAL.
+  return appActive && core === 'rule' ? (source ?? core) : (core ?? source)
 }
 
-export const coreProxyMode = (mode: ProxyMode) =>
-  mode === 'app' ? 'rule' : mode
+export const coreProxyMode = (mode: ProxyMode, appActive = false): ProxyMode =>
+  appActive ? 'rule' : mode
 
-export const isProxyModeDisabled = (mode: ProxyMode, tunEnabled: boolean) =>
-  mode === 'app' && tunEnabled
+export const appRoutingAvailable = (verge?: Partial<IVergeConfig>) =>
+  verge?.enable_tun_mode === true && verge.enable_system_proxy !== true
+
+export const appRoutingActive = (verge?: Partial<IVergeConfig>) =>
+  verge?.enable_app_routing === true && appRoutingAvailable(verge)

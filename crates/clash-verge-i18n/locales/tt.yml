@@ -58,7 +58,7 @@ launchGuard:
   move: Күчерү
   ok: Ярый
 tray:
-  appMode: APP
+  appMode: APP routing
   dashboard: Идарә панеле
   ruleMode: Кагыйдә режимы
   globalMode: Глобаль режим

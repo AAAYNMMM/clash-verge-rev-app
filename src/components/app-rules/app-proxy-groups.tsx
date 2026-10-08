@@ -37,6 +37,7 @@ import {
   nodeTarget,
   targetKey,
 } from '@/utils/app-routing'
+import { appRoutingActive } from '@/utils/proxy-mode'
 
 interface GroupProps {
   group: AppRoutingGroup
@@ -334,7 +335,7 @@ export const AppProxyGroups = () => {
     if (
       writingRef.current ||
       !group.enabled ||
-      verge?.enable_tun_mode ||
+      !appRoutingActive(verge) ||
       group.target.kind !== 'node' ||
       key === targetKey(group.target)
     )
@@ -409,7 +410,7 @@ export const AppProxyGroups = () => {
               nodes={nodes}
               loading={isProxyViewPending}
               unavailable={isProxyViewError}
-              busy={pendingKey !== null || verge.enable_tun_mode === true}
+              busy={pendingKey !== null || !appRoutingActive(verge)}
               pendingKey={pendingKey}
               onSelect={(group, node) => {
                 void select(group, node)

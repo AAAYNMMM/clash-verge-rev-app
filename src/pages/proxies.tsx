@@ -1,10 +1,11 @@
 import { LanOutlined, LanRounded, WarningRounded } from '@mui/icons-material'
-import { Box, Button, ButtonGroup } from '@mui/material'
+import { Box, Button, ButtonGroup, Tabs, Tab } from '@mui/material'
 import { useLockFn } from 'ahooks'
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AppProxyGroups } from '@/components/app-rules/app-proxy-groups'
+import { AppRoutingToggle } from '@/components/app-rules/app-routing-toggle'
 import { BasePage, TooltipIcon } from '@/components/base'
 import { ProviderButton } from '@/components/proxy/provider-button'
 import { ProxyGroups } from '@/components/proxy/proxy-groups'
@@ -25,8 +26,7 @@ import { debugLog } from '@/utils/debug'
 import {
   PROXY_MODES as MODES,
   resolveProxyMode,
-  isProxyModeDisabled,
-  coreProxyMode,
+  appRoutingActive,
   type ProxyMode as Mode,
 } from '@/utils/proxy-mode'
 
@@ -54,7 +54,8 @@ const ProxyPage = () => {
 
   const { clashConfig } = useClashConfigData()
   const { verge } = useVerge()
-  const tunEnabled = verge?.enable_tun_mode === true
+  const appActive = appRoutingActive(verge)
+  const [nodeView, setNodeView] = useState<'app' | 'default'>('app')
   const { data: savedMode } = useClashMode()
   const { refreshClashConfig } = useAppRefreshers()
 
@@ -63,12 +64,12 @@ const ProxyPage = () => {
   }, [])
 
   const normalizedMode = clashConfig?.mode?.toLowerCase()
-  const curMode = resolveProxyMode(savedMode, normalizedMode, tunEnabled)
-  const isAppMode = curMode === 'app'
+  const curMode = resolveProxyMode(savedMode, normalizedMode, appActive)
+  const isAppView = appActive && nodeView === 'app' && !isChainMode
   const chainWarning = t('proxies.page.chain.warning')
 
   const onChangeMode = useLockFn(async (mode: Mode) => {
-    if (!verge || isProxyModeDisabled(mode, tunEnabled)) return
+    if (!verge) return
     try {
       // patchClashMode 在后端 PATCH 失败时会 reject，需提示用户而非静默失败
       await mutate(() => patchClashMode(mode), {
@@ -76,6 +77,7 @@ const ProxyPage = () => {
         revalidate: [['getClashMode']],
         errorNotice: false,
       })
+      setNodeView('default')
       refreshClashConfig()
     } catch (error) {
       showNotice.error(error)
@@ -169,7 +171,7 @@ const ProxyPage = () => {
               sx={{ p: 0.25 }}
             />
           </Box>
-        ) : isAppMode ? (
+        ) : isAppView ? (
           t('rules.appRouting.groupsPageTitle')
         ) : (
           t('proxies.page.title.default')
@@ -177,18 +179,15 @@ const ProxyPage = () => {
       }
       header={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {!isAppMode && <ProviderButton />}
+          {!isAppView && <ProviderButton />}
+          <AppRoutingToggle onEnabled={() => setNodeView('app')} />
 
           <ButtonGroup size="small">
             {MODES.map((mode) => (
               <Button
                 key={mode}
-                disabled={!verge || isProxyModeDisabled(mode, tunEnabled)}
-                title={
-                  mode === 'app' && tunEnabled
-                    ? t('rules.appRouting.tunDisabled')
-                    : undefined
-                }
+                disabled={!verge}
+                aria-pressed={mode === curMode}
                 variant={mode === curMode ? 'contained' : 'outlined'}
                 onClick={() => onChangeMode(mode)}
                 sx={{ textTransform: 'capitalize' }}
@@ -217,15 +216,36 @@ const ProxyPage = () => {
         </Box>
       }
     >
-      {isAppMode && !isChainMode ? (
-        <AppProxyGroups />
-      ) : (
-        <ProxyGroups
-          mode={coreProxyMode(curMode ?? 'rule')}
-          isChainMode={isChainMode}
-          chainConfigData={chainConfigData}
-        />
-      )}
+      <Box
+        sx={{
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 0,
+        }}
+      >
+        {appActive && !isChainMode && (
+          <Tabs
+            value={nodeView}
+            onChange={(_, value: 'app' | 'default') => setNodeView(value)}
+            aria-label={t('rules.appRouting.nodeViews')}
+          >
+            <Tab value="app" label={t('rules.appRouting.groupsPageTitle')} />
+            <Tab value="default" label={t('rules.appRouting.defaultExit')} />
+          </Tabs>
+        )}
+        <Box sx={{ flex: 1, minHeight: 0 }}>
+          {isAppView ? (
+            <AppProxyGroups />
+          ) : (
+            <ProxyGroups
+              mode={curMode ?? 'rule'}
+              isChainMode={isChainMode}
+              chainConfigData={chainConfigData}
+            />
+          )}
+        </Box>
+      </Box>
     </BasePage>
   )
 }

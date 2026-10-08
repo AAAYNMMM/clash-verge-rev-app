@@ -8,9 +8,8 @@ pub async fn select_app_group_node(group_id: &str, target: AppTarget) -> Result<
     let config_write = Config::try_lock_config_write()?;
     let verge = Config::verge().await.latest_arc();
     ensure!(
-        !verge.enable_tun_mode.unwrap_or(false)
-            && Config::clash().await.data_arc().get_mode().as_deref() == Some("app"),
-        "APP mode must be active and TUN disabled before selecting a group node"
+        verge.app_routing_active(),
+        "Enable TUN and APP routing, and disable system proxy, before selecting a group node"
     );
     // Merge one choice into current config; another group's selection or edits must not be overwritten.
     let routing = verge

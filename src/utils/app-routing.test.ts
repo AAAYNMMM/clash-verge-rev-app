@@ -9,7 +9,8 @@ import {
 import {
   coreProxyMode,
   resolveProxyMode,
-  isProxyModeDisabled,
+  appRoutingActive,
+  appRoutingAvailable,
 } from './proxy-mode'
 
 describe('APP routing identities and modes', () => {
@@ -38,27 +39,38 @@ describe('APP routing identities and modes', () => {
     )
   })
 
-  it('restores the APP UI mode while Mihomo is running its rule engine', () => {
-    expect(resolveProxyMode('app', 'rule')).toBe('app')
-    expect(resolveProxyMode('app', undefined)).toBe('app')
-    expect(coreProxyMode('app')).toBe('rule')
-    expect(resolveProxyMode('rule', 'rule')).toBe('rule')
+  it('keeps Global and APP active while the core evaluates rules', () => {
+    expect(resolveProxyMode('global', 'rule', true)).toBe('global')
+    expect(resolveProxyMode('direct', 'rule', true)).toBe('direct')
+    expect(resolveProxyMode('rule', 'rule', true)).toBe('rule')
+    expect(coreProxyMode('global', true)).toBe('rule')
+    expect(coreProxyMode('global', false)).toBe('global')
+    expect(resolveProxyMode('app', undefined)).toBe('rule')
   })
 
-  it('does not mask external core mode changes', () => {
-    expect(resolveProxyMode('app', 'global')).toBe('global')
-    expect(resolveProxyMode('app', 'direct')).toBe('direct')
+  it('uses the live core mode when APP is off or changed externally', () => {
+    expect(resolveProxyMode('global', 'rule', false)).toBe('rule')
+    expect(resolveProxyMode('rule', 'global', true)).toBe('global')
     expect(resolveProxyMode(undefined, 'GLOBAL')).toBe('global')
   })
 })
 
-it('does not show APP as active or selectable while TUN is enabled', () => {
-  expect(resolveProxyMode('app', 'rule', true)).toBe('rule')
-  expect(resolveProxyMode('app', undefined, true)).toBe('rule')
-  expect(isProxyModeDisabled('app', true)).toBe(true)
-  expect(isProxyModeDisabled('rule', true)).toBe(false)
-  expect(isProxyModeDisabled('app', false)).toBe(false)
-  expect(resolveProxyMode('rule', 'rule', false)).toBe('rule')
+it('only permits the independent APP switch for TUN without system proxy', () => {
+  for (const tun of [false, true]) {
+    for (const system of [false, true]) {
+      const settings = {
+        enable_tun_mode: tun,
+        enable_system_proxy: system,
+        enable_app_routing: true,
+      }
+      expect(appRoutingAvailable(settings)).toBe(tun && !system)
+      expect(appRoutingActive(settings)).toBe(tun && !system)
+      expect(appRoutingActive({ ...settings, enable_app_routing: false })).toBe(
+        false,
+      )
+    }
+  }
+  expect(appRoutingAvailable(undefined)).toBe(false)
 })
 
 it('deduplicates program-picker paths without merging separate installations', () => {

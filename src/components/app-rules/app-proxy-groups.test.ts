@@ -17,7 +17,12 @@ vi.mock('react-i18next', () => ({
 }))
 vi.mock('@/hooks/use-verge', () => ({
   useVerge: () => ({
-    verge: { app_routing: { groups: state.groups }, enable_tun_mode: false },
+    verge: {
+      app_routing: { groups: state.groups },
+      enable_tun_mode: true,
+      enable_app_routing: true,
+      enable_system_proxy: false,
+    },
   }),
 }))
 vi.mock('@/providers/app-data-context', () => ({

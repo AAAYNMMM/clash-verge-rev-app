@@ -58,7 +58,7 @@ launchGuard:
   move: Taşı
   ok: Tamam
 tray:
-  appMode: APP
+  appMode: APP routing
   dashboard: Gösterge Paneli
   ruleMode: Kural Modu
   globalMode: Küresel Mod

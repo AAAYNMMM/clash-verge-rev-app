@@ -14,12 +14,8 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  FormControl,
   IconButton,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   Switch,
   Tooltip,
@@ -30,25 +26,30 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AppGroupDialog } from '@/components/app-rules/app-group-dialog'
+import { AppRoutingToggle } from '@/components/app-rules/app-routing-toggle'
 import { BasePage } from '@/components/base'
 import { useClashMode } from '@/hooks/use-clash'
 import { useVerge } from '@/hooks/use-verge'
 import { useAppRefreshers, useProxiesData } from '@/providers/app-data-context'
-import { patchClashMode } from '@/services/cmds'
-import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
 import type { AppRoutingConfig, AppRoutingGroup } from '@/types/app-routing'
 import { appNodes, findAppNode } from '@/utils/app-routing'
+import {
+  appRoutingActive,
+  appRoutingAvailable,
+  parseProxyMode,
+} from '@/utils/proxy-mode'
 
-const EMPTY_ROUTING: AppRoutingConfig = { groups: [], unmatched: 'direct' }
+const EMPTY_ROUTING: AppRoutingConfig = { groups: [] }
 
 const AppRulesPage = () => {
   const { t } = useTranslation()
   const { verge, patchVerge } = useVerge()
   const { data: mode } = useClashMode()
   const { proxyView, isProxyViewPending, isProxyViewError } = useProxiesData()
-  const { refreshProxy, refreshClashConfig } = useAppRefreshers()
-  const tunEnabled = verge?.enable_tun_mode === true
+  const { refreshProxy } = useAppRefreshers()
+  const appActive = appRoutingActive(verge)
+  const appAvailable = appRoutingAvailable(verge)
   const routing = verge?.app_routing ?? EMPTY_ROUTING
   const nodes = appNodes(proxyView)
   const [editing, setEditing] = useState<AppRoutingGroup | null>(null)
@@ -89,74 +90,45 @@ const AppRulesPage = () => {
     void saveRouting({ ...routing, groups })
   }
 
-  const activate = async () => {
-    if (writingRef.current || tunEnabled || !verge) return
-    writingRef.current = true
-    setSaving(true)
-    try {
-      await mutate(() => patchClashMode('app'), {
-        id: 'patch-clash-mode',
-        revalidate: [['getClashMode']],
-        errorNotice: false,
-      })
-      await Promise.allSettled([refreshClashConfig()])
-    } catch (error) {
-      showNotice.error(error)
-    } finally {
-      writingRef.current = false
-      setSaving(false)
-    }
-  }
-
   return (
     <BasePage
       title={t('rules.appRouting.title')}
       header={
-        <Button
-          variant="contained"
-          size="small"
-          startIcon={<AddRounded />}
-          disabled={saving || !verge}
-          onClick={() =>
-            setEditing({
-              id: nanoid(),
-              name: '',
-              enabled: true,
-              apps: [],
-              node_patterns: [],
-              target: { kind: 'rule' },
-            })
-          }
-        >
-          {t('rules.appRouting.addGroup')}
-        </Button>
+        <Stack direction="row" spacing={1}>
+          <AppRoutingToggle />
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddRounded />}
+            disabled={saving || !verge}
+            onClick={() =>
+              setEditing({
+                id: nanoid(),
+                name: '',
+                enabled: true,
+                apps: [],
+                node_patterns: [],
+                target: { kind: 'rule' },
+              })
+            }
+          >
+            {t('rules.appRouting.addGroup')}
+          </Button>
+        </Stack>
       }
     >
       <Stack spacing={2} sx={{ p: 1 }}>
         <Alert severity="info">{t('rules.appRouting.intro')}</Alert>
-        {(mode !== 'app' || tunEnabled) && (
-          <Alert
-            severity="warning"
-            action={
-              <Button
-                size="small"
-                onClick={activate}
-                disabled={saving || !verge || tunEnabled}
-              >
-                {t('rules.appRouting.activate')}
-              </Button>
-            }
-          >
+        {!appActive && (
+          <Alert severity="warning">
             {t(
-              tunEnabled
-                ? 'rules.appRouting.tunDisabled'
-                : 'rules.appRouting.inactive',
+              appAvailable
+                ? 'rules.appRouting.inactive'
+                : 'rules.appRouting.tunDisabled',
             )}
           </Alert>
         )}
-        {!tunEnabled && (
-          <Alert severity="info">{t('rules.appRouting.trafficHelp')}</Alert>
-        )}
+        <Alert severity="info">{t('rules.appRouting.trafficHelp')}</Alert>
         {isProxyViewError && (
           <Alert severity="warning">
             {t('rules.appRouting.nodesUnavailable')}
@@ -179,29 +151,11 @@ const AppRulesPage = () => {
                 {t('rules.appRouting.priority')}
               </Typography>
             </Box>
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel id="app-unmatched-label">
-                {t('rules.appRouting.defaultPolicy')}
-              </InputLabel>
-              <Select
-                labelId="app-unmatched-label"
-                label={t('rules.appRouting.defaultPolicy')}
-                value={routing.unmatched}
-                disabled={saving || !verge}
-                onChange={(event) => {
-                  const value = event.target.value
-                  if (value === 'direct' || value === 'rule')
-                    void saveRouting({ ...routing, unmatched: value })
-                }}
-              >
-                <MenuItem value="direct">
-                  {t('rules.appRouting.direct')}
-                </MenuItem>
-                <MenuItem value="rule">
-                  {t('rules.appRouting.ruleMode')}
-                </MenuItem>
-              </Select>
-            </FormControl>
+            <Chip
+              color="primary"
+              variant="outlined"
+              label={t(`proxies.page.modes.${parseProxyMode(mode) ?? 'rule'}`)}
+            />
           </Stack>
         </Paper>
         {routing.groups.length === 0 && (

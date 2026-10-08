@@ -70,6 +70,7 @@ verge_registry! {
     sysproxy_tray_icon => [TrayIcon];
     tun_tray_icon => [TrayIcon];
     app_routing => [ClashConfig];
+    enable_app_routing => [ClashConfig, TrayMenu];
     enable_tun_mode => Tun;
     enable_auto_launch => [Autostart];
     enable_silent_start => NoEffect;

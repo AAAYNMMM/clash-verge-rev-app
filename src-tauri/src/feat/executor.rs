@@ -114,10 +114,8 @@ pub(super) async fn apply(config_write: &MutexGuard<'_, ()>, patch: Patch<'_>, e
     let clash = Config::clash().await;
     let verge = Config::verge().await;
     let runtime = Config::runtime().await;
-    let leave_app_mode = matches!(&patch, Patch::Verge { patch, .. } if patch.enable_tun_mode == Some(true))
-        && clash.latest_arc().get_mode().as_deref() == Some("app");
+    let app_was_active = verge.data_arc().app_routing_active();
     let transaction = match patch {
-        Patch::Verge { .. } if leave_app_mode => DraftTransaction::begin(vec![&clash, &verge, &runtime])?,
         Patch::Verge { .. } => DraftTransaction::begin(vec![&verge, &runtime])?,
         Patch::Clash(_) => DraftTransaction::begin(vec![&clash, &runtime])?,
     };
@@ -132,11 +130,6 @@ pub(super) async fn apply(config_write: &MutexGuard<'_, ()>, patch: Patch<'_>, e
         Patch::Verge { patch, .. } => verge.edit_draft(|draft| draft.patch_config(patch)),
         Patch::Clash(patch) => clash.edit_draft(|draft| draft.patch_config(patch)),
     }
-    if leave_app_mode {
-        clash.edit_draft(|draft| {
-            draft.disable_app_mode_for_tun(true);
-        });
-    }
     let result: Result<()> = async {
         for effect in effects.iter().copied() {
             let result = Box::pin(ensure_effect(effect, verge_patch, manager, &update)).await;
@@ -150,9 +143,6 @@ pub(super) async fn apply(config_write: &MutexGuard<'_, ()>, patch: Patch<'_>, e
         match patch {
             Patch::Verge { persist: true, .. } => {
                 verge.latest_arc().save_file().await?;
-                if leave_app_mode {
-                    clash.latest_arc().save_config().await?;
-                }
             }
             Patch::Verge { persist: false, .. } => {}
             Patch::Clash(_) => clash.latest_arc().save_config().await?,
@@ -174,7 +164,9 @@ pub(super) async fn apply(config_write: &MutexGuard<'_, ()>, patch: Patch<'_>, e
         };
     }
     transaction.commit();
-    if leave_app_mode && verge.data_arc().auto_close_connection.unwrap_or(false) {
+    if app_was_active != verge.data_arc().app_routing_active()
+        && verge.data_arc().auto_close_connection.unwrap_or(false)
+    {
         super::clash::after_change_clash_mode();
     }
     match patch {
@@ -198,32 +190,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn app_mode_and_tun_preference_share_commit_and_rollback() -> Result<()> {
+    fn overlay_and_transport_share_commit_and_rollback_without_changing_base_mode() -> Result<()> {
         use crate::config::IClashTemp;
         use clash_verge_draft::Draft;
         for commit in [false, true] {
             let mut config = IClashTemp::default();
-            config.0.insert("mode".into(), "app".into());
+            config.0.insert("mode".into(), "global".into());
             let clash = Draft::new(config);
             let verge = Draft::new(IVerge {
-                enable_tun_mode: Some(false),
+                enable_tun_mode: Some(true),
+                enable_app_routing: Some(true),
                 ..Default::default()
             });
-            let transaction = DraftTransaction::begin(vec![&clash, &verge])?;
-            clash.edit_draft(|draft| {
-                draft.disable_app_mode_for_tun(true);
+            let transaction = DraftTransaction::begin(vec![&verge])?;
+            verge.edit_draft(|draft| {
+                draft.enable_tun_mode = Some(false);
+                draft.disable_unavailable_app_routing();
             });
-            verge.edit_draft(|draft| draft.enable_tun_mode = Some(true));
             if commit {
                 transaction.commit();
             } else {
                 transaction.rollback();
             }
-            assert_eq!(
-                clash.data_arc().get_mode().as_deref(),
-                Some(if commit { "rule" } else { "app" })
-            );
-            assert_eq!(verge.data_arc().enable_tun_mode, Some(commit));
+            assert_eq!(clash.data_arc().get_mode().as_deref(), Some("global"));
+            assert_eq!(verge.data_arc().enable_app_routing, Some(!commit));
+            assert_eq!(verge.data_arc().enable_tun_mode, Some(!commit));
         }
         Ok(())
     }

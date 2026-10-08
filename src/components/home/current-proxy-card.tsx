@@ -37,6 +37,7 @@ import { useNavigate } from 'react-router'
 
 import { EnhancedCard } from '@/components/home/enhanced-card'
 import type { ProxySortType } from '@/components/proxy/use-filter-sort'
+import { useClashMode } from '@/hooks/use-clash'
 import { useGroupDelays } from '@/hooks/use-group-delays'
 import { useProfiles } from '@/hooks/use-profiles'
 import { useProxySelection } from '@/hooks/use-proxy-selection'
@@ -59,6 +60,7 @@ import {
 } from '@/types/proxy-view'
 import { debugLog } from '@/utils/debug'
 import { compareByDelay, DEFAULT_DELAY_TIMEOUT } from '@/utils/delay'
+import { appRoutingActive, resolveProxyMode } from '@/utils/proxy-mode'
 
 const STORAGE_KEY_GROUP = 'clash-verge-selected-proxy-group'
 const STORAGE_KEY_SORT_TYPE = 'clash-verge-proxy-sort-type'
@@ -606,7 +608,10 @@ export const CurrentProxyCard = () => {
     },
   })
 
-  const mode = clashConfig?.mode?.toLowerCase() || 'rule'
+  const { data: savedMode } = useClashMode()
+  const mode =
+    resolveProxyMode(savedMode, clashConfig?.mode, appRoutingActive(verge)) ??
+    'rule'
   const isGlobalMode = mode === 'global'
   const isDirectMode = mode === 'direct'
 

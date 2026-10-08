@@ -7,15 +7,6 @@ use std::collections::HashSet;
 #[serde(default)]
 pub struct AppRoutingConfig {
     pub groups: Vec<AppRoutingGroup>,
-    pub unmatched: UnmatchedPolicy,
-}
-
-#[derive(Default, Debug, Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
-pub enum UnmatchedPolicy {
-    #[default]
-    Direct,
-    Rule,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

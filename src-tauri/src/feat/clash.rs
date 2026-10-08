@@ -90,7 +90,7 @@ pub(super) fn after_change_clash_mode() {
     });
 }
 
-/// APP mode needs a full transaction: Mihomo itself still runs in rule mode.
+/// A default-mode change must rebuild the APP overlay before updating the core.
 pub async fn change_clash_mode(mode: String) -> Result<(), String> {
     let mut mapping = Mapping::new();
     mapping.insert(Value::from("mode"), Value::from(mode.as_str()));

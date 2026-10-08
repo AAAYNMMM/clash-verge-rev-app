@@ -1,5 +1,4 @@
 import {
-  AppsRounded,
   DirectionsRounded,
   LanguageRounded,
   MultipleStopRounded,
@@ -10,6 +9,7 @@ import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BaseConfig } from 'tauri-plugin-mihomo-api'
 
+import { AppRoutingToggle } from '@/components/app-rules/app-routing-toggle'
 import { useClashMode, useRuntimeConfig } from '@/hooks/use-clash'
 import { useVerge } from '@/hooks/use-verge'
 import {
@@ -24,7 +24,7 @@ import { setCacheData } from '@/services/query-client'
 import type { TranslationKey } from '@/types/generated/i18n-keys'
 import {
   coreProxyMode,
-  isProxyModeDisabled,
+  appRoutingActive,
   parseProxyMode as toClashMode,
   PROXY_MODES as CLASH_MODES,
   resolveProxyMode,
@@ -35,10 +35,6 @@ const MODE_META: Record<
   ClashMode,
   { label: TranslationKey; description: TranslationKey }
 > = {
-  app: {
-    label: 'home.components.clashMode.labels.app',
-    description: 'home.components.clashMode.descriptions.app',
-  },
   rule: {
     label: 'home.components.clashMode.labels.rule',
     description: 'home.components.clashMode.descriptions.rule',
@@ -54,7 +50,6 @@ const MODE_META: Record<
 }
 
 const MODE_ICONS: Record<ClashMode, ReactNode> = {
-  app: <AppsRounded fontSize="small" />,
   rule: <MultipleStopRounded fontSize="small" />,
   global: <LanguageRounded fontSize="small" />,
   direct: <DirectionsRounded fontSize="small" />,
@@ -64,9 +59,8 @@ export const ClashModeCard = () => {
   const { t } = useTranslation()
   const { clashConfig } = useClashConfigData()
   const { verge } = useVerge()
-  const tunEnabled = verge?.enable_tun_mode === true
-  const modeDisabled = (mode: ClashMode) =>
-    !verge || isProxyModeDisabled(mode, tunEnabled)
+  const appActive = appRoutingActive(verge)
+  const modeDisabled = () => !verge
   const { isCoreDataPending } = useCoreDataStatus()
   const { refreshClashConfig } = useAppRefreshers()
 
@@ -86,19 +80,21 @@ export const ClashModeCard = () => {
   const fallbackMode = toClashMode(backendMode) ?? runtimeMode
 
   const resolvedMode =
-    resolveProxyMode(backendMode, controllerMode, tunEnabled) ?? fallbackMode
-  const selectedMode = optimisticMode ?? resolvedMode
-  const currentMode =
-    selectedMode === 'app' && tunEnabled ? 'rule' : selectedMode
+    resolveProxyMode(backendMode, controllerMode, appActive) ?? fallbackMode
+  const currentMode = optimisticMode ?? resolvedMode
 
   const modeDescription = currentMode
-    ? t(MODE_META[currentMode].description)
+    ? appActive
+      ? t('rules.appRouting.defaultModeHelp', {
+          mode: t(MODE_META[currentMode].label),
+        })
+      : t(MODE_META[currentMode].description)
     : isCoreDataPending || isRuntimeConfigPending || isBackendModePending
       ? '\u00A0'
       : t('home.components.clashMode.errors.communication')
 
   const onChangeMode = useLockFn(async (mode: ClashMode) => {
-    if (mode === currentMode || modeDisabled(mode)) return
+    if (mode === currentMode || modeDisabled()) return
 
     setOptimisticMode(mode)
     try {
@@ -114,7 +110,7 @@ export const ClashModeCard = () => {
 
     // Write through the live cache to avoid flashing the old mode during refetch.
     setCacheData<BaseConfig>(['getClashConfig'], (old) =>
-      old ? { ...old, mode: coreProxyMode(mode) } : old,
+      old ? { ...old, mode: coreProxyMode(mode, appActive) } : old,
     )
     await setCacheData(['getClashMode'], mode)
     await Promise.allSettled([refreshClashConfig(), refetchBackendMode()])
@@ -122,7 +118,7 @@ export const ClashModeCard = () => {
   })
 
   const buttonStyles = (mode: ClashMode) => ({
-    cursor: modeDisabled(mode) ? 'not-allowed' : 'pointer',
+    cursor: modeDisabled() ? 'not-allowed' : 'pointer',
     border: 0,
     font: 'inherit',
     '&:disabled': { opacity: 0.45 },
@@ -178,6 +174,9 @@ export const ClashModeCard = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+      <Box sx={{ alignSelf: 'flex-start', mt: 1 }}>
+        <AppRoutingToggle />
+      </Box>
       <Stack
         direction="row"
         spacing={1}
@@ -194,12 +193,8 @@ export const ClashModeCard = () => {
             key={mode}
             component="button"
             type="button"
-            disabled={modeDisabled(mode)}
-            title={
-              mode === 'app' && tunEnabled
-                ? t('rules.appRouting.tunDisabled')
-                : undefined
-            }
+            disabled={modeDisabled()}
+            aria-pressed={mode === currentMode}
             elevation={mode === currentMode ? 2 : 0}
             onClick={() => onChangeMode(mode)}
             sx={buttonStyles(mode)}
@@ -230,8 +225,8 @@ export const ClashModeCard = () => {
       >
         <Typography variant="caption" component="div" sx={descriptionStyles}>
           {modeDescription}
-          {tunEnabled && (
-            <Box sx={{ mt: 0.5 }}>{t('rules.appRouting.tunDisabled')}</Box>
+          {appActive && (
+            <Box sx={{ mt: 0.5 }}>{t('rules.appRouting.overlayHelp')}</Box>
           )}
         </Typography>
       </Box>
