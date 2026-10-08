@@ -107,6 +107,23 @@ test('install and uninstall never perform upstream cleanup or global TCP reset',
     mutations,
     /io\.github\.clash-verge-rev|"clash_verge_service"/,
   )
+  const processTargets = [
+    ...installer.matchAll(
+      /nsis_tauri_utils::(?:FindProcess(?:CurrentUser)?|KillProcess(?:CurrentUser)?)\s+"([^"]+)"/g,
+    ),
+  ].map((match) => match[1])
+  assert.ok(processTargets.length > 0)
+  for (const name of processTargets) {
+    assert.ok(
+      [
+        'cvr-app-service.exe',
+        'cvr-app-mihomo.exe',
+        'cvr-app-mihomo-alpha.exe',
+      ].includes(name),
+      `Installer must not touch another client's process: ${name}`,
+    )
+  }
+  assert.ok(installer.includes('!define MUI_UNICON "${INSTALLERICON}"'))
   assert.match(
     read('src-tauri/src/utils/schtasks.rs'),
     /TASK_NAME_USER: &str = "Clash Verge Rev App"/,
