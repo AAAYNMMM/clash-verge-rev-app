@@ -1,3 +1,6 @@
+> [!WARNING]
+> Historical upstream documentation, not the current Clash Verge Rev App 2.5.13 guide. Use the updated [English guide](README_en.md), [Chinese guide](../README.md) and [this fork's downloads](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.13). The screenshots and installation instructions below are retained for historical reference.
+
 <h1 align="center">
   <img src="../src-tauri/icons/icon.png" alt="Clash" width="128" />
   <br>

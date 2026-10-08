@@ -1,6 +1,8 @@
 # CONTRIBUTING
 
-Thank you for your interest in contributing to **Clash Verge Rev**! This guide provides instructions to help you set up your development environment and start contributing effectively.
+Thank you for your interest in contributing to **Clash Verge Rev App**! This guide provides instructions to help you set up your development environment and start contributing effectively.
+
+This fork is maintained at [AAAYNMMM/clash-verge-rev-app](https://github.com/AAAYNMMM/clash-verge-rev-app), on `dev`. The current app version is **2.5.13**. Read the [current guide](docs/README_en.md) and [release notes](docs/releases/v2.5.13.md); historical upstream downloads are not this fork.
 
 ## Internationalization (i18n)
 
@@ -28,7 +30,7 @@ Before contributing, you need to set up your development environment. Follow the
 ### Prerequisites
 
 1. **Install Rust and Node.js**  
-   Our project requires both Rust and Node.js. Follow the official installation instructions [here](https://tauri.app/start/prerequisites/).
+   Use the Rust toolchain pinned in `rust-toolchain.toml`, pnpm pinned in `package.json`, and a compatible Node.js installation. The project requires both Rust and Node.js. Follow the official installation instructions [here](https://tauri.app/start/prerequisites/).
 
 ### Windows Users
 
@@ -62,7 +64,7 @@ corepack enable
 Node.js dependencies:
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 ```
 
 Ubuntu-only system packages:
@@ -71,12 +73,14 @@ Ubuntu-only system packages:
 sudo apt-get install -y libxslt1.1 libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
 ```
 
-### Download the Mihomo Core Binary (Automatic)
+### Prepare cores and rebuild the fork service
 
 ```bash
 pnpm run prebuild
-pnpm run prebuild --force  # Re-download and overwrite Mihomo core and service binaries
+pnpm run prebuild --force  # Refresh resources and rebuild the vendored service
 ```
+
+`prebuild` compiles the fork service and its installer/uninstaller from vendored source. Rerun it after service changes; do not mix cached helpers with a new GUI, or substitute renamed upstream service binaries.
 
 ### Run the Development Server
 
@@ -100,17 +104,15 @@ Fast build for testing:
 pnpm build:fast
 ```
 
-### Clean Build
+### Release packaging
 
-```bash
-pnpm clean
-```
+The published 2.5.13 installer is a Windows x64 `fast-release` test build, not a fully optimized production build. The current package scripts do not provide a portable package.
 
-### Portable Version (Windows Only)
+Signing requires the matching fork private key through the Tauri signing environment variables or configured CI secrets. Never commit or upload the private key. A clean clone contains only the public key. Updater signatures are not Windows Authenticode signatures.
 
-```bash
-pnpm portable
-```
+For documentation-only publication, preserve version fields and verified installer bytes, record the binary's source commit, and upload only the installer, public signature and checksum. Do not publish subscriptions, configuration, logs or workspace archives. Uploading an installer does not create updater metadata. Test prereleases must not be silently advertised through the stable channel.
+
+The inherited tag-triggered build workflow checks main-branch ancestry. Publishing an existing verified dev-branch test installer is separate from the multi-platform build workflow and does not mean other platform artifacts were built.
 
 ## Contributing Your Changes
 

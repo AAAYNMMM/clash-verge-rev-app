@@ -1,136 +1,77 @@
-<h1 align="center">
-  <img src="../src-tauri/icons/icon.png" alt="Clash" width="128" />
-  <br>
-  Continuation of <a href="https://github.com/zzzgydi/clash-verge">Clash Verge</a>
-  <br>
-</h1>
+# Clash Verge Rev App
 
-<h3 align="center">
-A Clash Meta GUI built with <a href="https://github.com/tauri-apps/tauri">Tauri</a>.
-</h3>
+<img src="../src-tauri/icons/icon.png" alt="Clash Verge Rev App" width="128">
 
-<p align="center">
-  Languages:
-  <a href="./README_en.md">English</a> ·
-  <a href="./README_es.md">Español</a> ·
-  <a href="./README_fa.md">فارسی</a> ·
-  <a href="./README_ja.md">日本語</a> ·
-  <a href="./README_ko.md">한국어</a> ·
-  <a href="./README_pt.md">Português</a> ·
-  <a href="./README_ru.md">Русский</a> ·
-  <a href="../README.md">简体中文</a>
-</p>
+An independent fork of [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev), with **TUN-only APP routing overrides**, separate installation, configuration, services and branding. This is not an official upstream release.
 
-## Preview
+**Current release: 2.5.13 — Windows x64 test build**
 
-| Dark                                | Light                                 |
-| ----------------------------------- | ------------------------------------- |
-| ![Dark Preview](./preview_dark.png) | ![Light Preview](./preview_light.png) |
+[Download](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.13) · [简体中文](../README.md) · [Routing reference](APP_ROUTING.md) · [Release notes](releases/v2.5.13.md) · [Changelog](../Changelog.md)
 
-## Install
+## Install or upgrade
 
-Visit the [Release page](https://github.com/clash-verge-rev/clash-verge-rev/releases) to download the installer that matches your platform.<br>
-We provide packages for Windows (x64/x86), Linux (x64/arm64), and macOS 10.15+ (Intel/Apple).
+Download `Clash.Verge.Rev.App_2.5.13_x64-test-setup.exe`, exit the running fork, run the installer, accept the administrator prompt and keep the fork's current installation directory. Do not uninstall first or delete configuration. Upstream subscriptions are not imported automatically.
 
-#### Choosing a Release Channel
+2.5.13 fixes service installation/repair error `1007`. An upgrade replaces the installed fork service rather than just restarting an old copy. On a fresh installation without a service, use the in-app service installation prompt. Renamed upstream service executables are not compatible.
 
-| Channel     | Description                                                           | Link                                                                                   |
-| :---------- | :-------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
-| Stable      | Official builds with high reliability, ideal for daily use.           | [Release](https://github.com/clash-verge-rev/clash-verge-rev/releases)                 |
-| Alpha (EOL) | Legacy builds used to validate the publish pipeline.                  | [Alpha](https://github.com/clash-verge-rev/clash-verge-rev/releases/tag/alpha)         |
-| AutoBuild   | Rolling builds for testing and feedback. Expect experimental changes. | [AutoBuild](https://github.com/clash-verge-rev/clash-verge-rev/releases/tag/autobuild) |
+This release reuses the verified installer built from commit `06ba99a6` with the `fast-release` profile. Documentation updates do not alter its bytes. It is a **test prerelease**, not a fully optimized production build. Only Windows x64 is supplied; other platforms, portable and fixed-WebView2 installers are not included.
 
-#### Installation Guides & FAQ
+The `.sha256` file verifies integrity; `.sig` is the updater signature, not a Windows Authenticode signature. Download this prerelease manually; it is not advertised on the stable automatic-update channel. Automatic checks default to off, and uploading an installer alone does not create updater metadata.
 
-Read the [project documentation](https://clash-verge-rev.github.io/) for install steps, troubleshooting, and frequently asked questions.
+## Browser on an ordinary node; other apps on a residential node
 
-### Telegram Channel
+Disable the other client's system proxy and TUN. In this fork, disable System proxy, enable TUN, enable the independent **APP** toggle, and select **Global** as the default mode. Choose a residential node under **Default exit**. Use the right half of the sidebar Rules row to create a Browser group, add the browser executable, choose **Specific node**, and manually select an ordinary node.
 
-Join [@clash_verge_rev](https://t.me/clash_verge_re) for update announcements.
+The browser's TUN connections use its APP node; other unmatched external connections use Global. Codex, Git and short-lived helpers therefore do not each need APP exceptions. Disable explicit proxy settings/extensions for apps meant to use TUN. AI websites inside the same browser process also follow the browser group; this is not per-tab routing.
 
----
+## Routing and interface
 
-## Promotion
+APP is an independent switch, not a fourth mutually exclusive mode. **APP + Rule** and **APP + Global** are supported. The Proxies page has **APP groups** and **Default exit** views; changing views does not disable either layer. APP groups show only user-created groups and their filtered candidate nodes. The **Chain Proxy** button still opens the existing editor. Rules navigation is one row with two equal, independently selected click areas.
 
-### ✈️ [Doggygo VPN — A Technical-Grade Proxy Service](https://cvr.dginv.click/#/register?code=oaxsAGo6)
+Enabled groups match in order, first match wins. A group either delegates to the original Rule chain or pins one manually selected node. A failed, missing, renamed or UDP-incompatible pinned exit does not fall back to another node, Global, subscription rules or Direct. Rule-delegated groups retain the original rule chain even when the default is Global.
 
-🚀 A high-performance, overseas, technical-grade proxy service offering free trials and discounted plans, fully unlocking streaming platforms and AI services. The world’s first provider to adopt the **QUIC protocol**.
+Unmatched connections follow the default mode. While APP is active, the generated core configuration runs Rule mode and represents the Global default through a `GLOBAL` fallback. Disabling APP restores native mode behavior. Turning off TUN or turning on System proxy disables APP but preserves groups and the default mode; enabling TUN again does not automatically enable APP. Explicit HTTP/SOCKS ingress is excluded from APP overrides (`IN-TYPE,TUN`).
 
-🎁 Register via the **Clash Verge exclusive invitation link** to receive **3 days of free trial**, with **1GB traffic per day**: 👉 [Register here](https://cvr.dginv.click/#/register?code=oaxsAGo6)
+Upgrading obsolete `mode: app` settings changes the base mode to Rule, preserves groups/nodes and requires explicitly enabling the independent APP switch. The old `unmatched` option is retired in favor of the base mode.
 
-#### **Core Advantages:**
+### Applications and node filters
 
-- 📱 Self-developed iOS client (the industry’s “only one”), with technology proven in production and **significant ongoing R&D investment**
-- 🧑‍💻 **12-hour live customer support** (also assists with Clash Verge usage issues)
-- 💰 Discounted plans at **only CNY 21 per month, 160GB traffic, 20% off with annual billing**
-- 🌍 Overseas team, no risk of shutdown or exit scams, with up to **50% referral commission**
-- ⚙️ **Cluster-based load balancing** architecture with **real-time load monitoring and elastic scaling**, high-speed dedicated lines (compatible with legacy clients), ultra-low latency, unaffected by peak hours, **4K streaming loads instantly**
-- ⚡ The world’s first **QUIC-protocol-based proxy service**, now featuring faster **QUIC-family protocols** (best paired with the Clash Verge client)
-- 🎬 Unlocks **streaming platforms and mainstream AI services**
+Use the file picker, searchable multi-select running-program list or manual names/full paths. Full paths distinguish different installations. Directory-wide matching, automatic child-process inheritance and terminated-process history are not implemented.
 
-🌐 Official Website: 👉 [https://狗狗加速.com](https://cvr.dginv.click/#/register?code=oaxsAGo6)
+Node filtering uses **fancy-regex**, with lookaround and backreferences. Blank filters list all nodes; multiple lines form a union. Syntax errors or more than 100,000 backtracking attempts report errors. Filtering runs for preview, configuration generation and validation, not per packet; failed nodes never trigger automatic selection.
 
-### 🤖 [GPTKefu — AI-Powered Customer Service Platform Deeply Integrated with Crisp](https://gptkefu.com)
+### Local destination exceptions
 
-- 🧠 Deep understanding of full conversation context + image recognition, automatically providing professional and precise replies — no more robotic responses.
-- ♾️ **Unlimited replies**, no quota anxiety — unlike other AI customer service products that charge per message.
-- 💬 Pre-sales inquiries, after-sales support, complex Q&A — covers all scenarios effortlessly, with real user cases to prove it.
-- ⚡ 3-minute setup, zero learning curve — instantly boost customer service efficiency and satisfaction.
-- 🎁 Free 14-day trial of the Premium plan — try before you pay: 👉 [Start Free Trial](https://gptkefu.com)
-- 📢 AI Customer Service TG Channel: [@crisp_ai](https://t.me/crisp_ai)
+While APP is active, fixed local `DIRECT` rules precede APP overrides: loopback; `localhost`, `.local`, `.lan`; RFC1918 IPv4; IPv4 link-local; IPv6 ULA and link-local. This is not a TUN route exclusion or complete local-network detector.
 
----
+There is no separate toggle. IP rules use `no-resolve`, so arbitrary domains resolving to private addresses are not guaranteed to match. These exceptions may conflict with reaching remote private networks through a proxy. Unlike APP process rules, preliminary local rules are not restricted to TUN and also affect explicit proxy requests received by the same core. See the [exact scope](APP_ROUTING.md).
 
-## Features
+## Independent Windows identity
 
-- Built on high-performance Rust with the Tauri 2 framework
-- Ships with the embedded [Clash.Meta (mihomo)](https://github.com/MetaCubeX/mihomo) core and supports switching to the `Alpha` channel
-- Clean, polished UI with theme color controls, proxy group/tray icons, and `CSS Injection`
-- Enhanced profile management (Merge and Script helpers) with configuration syntax hints
-- System proxy controls, guard mode, and `TUN` (virtual network adapter) support
-- Visual editors for nodes and rules
-- WebDAV-based backup and sync for configurations
+| Item | Value |
+| --- | --- |
+| Installation | `C:\Program Files\Clash Verge Rev App` |
+| Executable | `clash-verge-rev-app.exe` |
+| App/configuration/WebView ID | `io.github.aaaynmmm.clash-verge-rev-app` |
+| Configuration | `%APPDATA%\io.github.aaaynmmm.clash-verge-rev-app` |
+| Service | `clash_verge_rev_app_service` |
+| Service data | `%PROGRAMDATA%\cvr-app-service` |
+| Cores | `cvr-app-mihomo.exe`, `cvr-app-mihomo-alpha.exe` |
+| Import protocol | `clash-verge-rev-app://` |
+| Mixed / SOCKS / HTTP defaults | `17897` / `17898` / `17899`, when enabled |
+| Controller default | `19097`, when enabled |
+| TUN interface | `CVR-App-TUN` |
 
-### FAQ
+Registry entries, shortcuts, startup tasks, IPC, locks and caches use fork identities. Original `clash://` and `clash-verge://` registrations are not replaced. Do not install into the upstream directory.
 
-See the [FAQ page](https://clash-verge-rev.github.io/faq/windows.html) for platform-specific guidance.
+Independent installation does not create separate OS-wide network settings. Only one client should manage TUN/system proxy at a time. Ownership checks cannot prevent another client from changing system settings later.
 
-### Donation
+## Verification and limitations
 
-[Support Clash Verge Rev development](https://github.com/sponsors/clash-verge-rev)
+Windows installation, protected service IPC and service-managed core startup were verified. APP/default routing passed real-core parsing and isolated routing checks, but complete live-TUN end-to-end testing has not been done. An automation-sandbox launch produced WebView2 `0x80070005`; service startup worked, and the effect on normal desktop launches was not established. Launch from the desktop/Start menu and preserve logs instead of deleting configuration.
 
-## Development
+## Development and license
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for detailed contribution guidelines.
+Follow [CONTRIBUTING.md](../CONTRIBUTING.md) and the pinned toolchain/package files. Run `pnpm install --frozen-lockfile`, `pnpm prebuild`, then `pnpm build`; `pnpm build:fast` is for testing. Rebuild all vendored service helpers after service source changes. Keep signing keys, subscriptions, configuration and logs out of release assets.
 
-After installing all **Tauri** prerequisites, run the development shell with:
-
-```shell
-pnpm i
-pnpm run prebuild
-pnpm dev
-```
-
-## Contributions
-
-Issues and pull requests are welcome!
-
-## Acknowledgement
-
-Clash Verge Rev builds on or draws inspiration from these projects:
-
-- [zzzgydi/clash-verge](https://github.com/zzzgydi/clash-verge): A Tauri-based Clash GUI for Windows, macOS, and Linux.
-- [tauri-apps/tauri](https://github.com/tauri-apps/tauri): Build smaller, faster, more secure desktop apps with a web frontend.
-- [Dreamacro/clash](https://github.com/Dreamacro/clash): A rule-based tunnel written in Go.
-- [MetaCubeX/mihomo](https://github.com/MetaCubeX/mihomo): A rule-based tunnel written in Go.
-- [Fndroid/clash_for_windows_pkg](https://github.com/Fndroid/clash_for_windows_pkg): A Clash GUI for Windows and macOS.
-- [vitejs/vite](https://github.com/vitejs/vite): Next-generation frontend tooling with blazing-fast DX.
-
-## Privacy
-
-Clash Verge Rev does not collect any user data; configuration and logs stay on
-your own device. See the [Privacy Policy](../PRIVACY.md) for details.
-
-## License
-
-GPL-3.0 License. See the [license file](../LICENSE) for details.
+Original authorship and GPL notices are retained. Built on Clash Verge Rev, Clash Verge, Mihomo, Tauri and Vite. See [LICENSE](../LICENSE) and [service provenance](../crates/clash-verge-rev-app-service/UPSTREAM.md). Report fork-specific issues to [this repository](https://github.com/AAAYNMMM/clash-verge-rev-app/issues). Other translated legacy pages and screenshots describe upstream, not this release.
