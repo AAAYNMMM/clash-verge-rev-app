@@ -13,6 +13,7 @@ import { navItems } from '@/pages/_navigation'
 import { SortableItem } from '../base'
 
 import { LayoutItem } from './layout-item'
+import { LayoutRulesItem } from './layout-rules-item'
 import { LayoutTraffic } from './layout-traffic'
 import { UpdateButton } from './update-button'
 
@@ -24,6 +25,9 @@ interface LayoutSidebarProps {
 }
 
 const SENSORS = [PointerSensor, KeyboardSensor]
+
+// APP Rules keeps its route, but shares the Rules row and its drag position.
+const sidebarItems = navItems.filter((item) => item.path !== '/app-rules')
 
 export const LayoutSidebar = (props: LayoutSidebarProps) => {
   const { isDark, isCollapsed } = props
@@ -56,7 +60,7 @@ export const LayoutSidebar = (props: LayoutSidebarProps) => {
     resetMenuOrder,
   } = useNavMenuOrder({
     enabled: menuUnlocked,
-    items: navItems,
+    items: sidebarItems,
     storedOrder: verge?.menu_order,
     onOptimisticUpdate: handleMenuOrderOptimisticUpdate,
     onPersist: handleMenuOrderPersist,
@@ -99,6 +103,25 @@ export const LayoutSidebar = (props: LayoutSidebarProps) => {
   const navMenuItems = menuOrder.map((path, index) => {
     const item = navItemMap.get(path)
     if (!item) return null
+
+    if (item.path === '/rules') {
+      const rulesProps = {
+        label: t(item.label),
+        appLabel: t('layout.components.navigation.tabs.appRules'),
+        icon: item.icon,
+        isCollapsed,
+        colorful: verge?.menu_icon === 'colorful',
+      }
+      return menuUnlocked ? (
+        <SortableItem key={item.path} id={item.path} index={index}>
+          {(sortable) => (
+            <LayoutRulesItem {...rulesProps} sortable={sortable} />
+          )}
+        </SortableItem>
+      ) : (
+        <LayoutRulesItem key={item.path} {...rulesProps} />
+      )
+    }
 
     // A registered sortable, even a disabled one, gets the drag-and-drop ARIA
     // attributes, so screen readers announce every item as a disabled draggable.
