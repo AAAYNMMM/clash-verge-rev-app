@@ -137,6 +137,147 @@ fn preserve_global_members(config: &Mapping, groups: &mut Vec<Value>) {
     groups.push(global.into());
 }
 
+const APP_RULE_CHAIN: &str = "__CV_APP_RULES";
+
+// Names are encoded instead of escaped: Mihomo rule targets are comma-separated.
+pub fn app_rule_group_name(name: &str) -> String {
+    let encoded = name
+        .as_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    format!("{GROUP_PREFIX}RULE_{encoded}")
+}
+
+fn app_sub_rule_name(name: &str) -> String {
+    let encoded = name
+        .as_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    format!("{GROUP_PREFIX}SUB_{encoded}")
+}
+
+fn duplicate_groups(
+    originals: &[Value],
+    selections: &std::collections::BTreeMap<String, String>,
+) -> Result<(Vec<Value>, std::collections::HashMap<String, String>)> {
+    let aliases: std::collections::HashMap<String, String> = originals
+        .iter()
+        .filter_map(|value| value.get("name").and_then(Value::as_str))
+        .map(|name| (name.to_owned(), app_rule_group_name(name)))
+        .collect();
+    let mut copies = Vec::with_capacity(originals.len());
+    for group in originals {
+        let mut copy = group
+            .as_mapping()
+            .cloned()
+            .ok_or_else(|| anyhow::anyhow!("APP rule mode requires mapping proxy groups"))?;
+        let original_name = group
+            .get("name")
+            .and_then(Value::as_str)
+            .ok_or_else(|| anyhow::anyhow!("APP rule mode requires named proxy groups"))?;
+        copy.insert("name".into(), app_rule_group_name(original_name).into());
+        copy.insert("hidden".into(), true.into());
+        copy.insert("empty-fallback".into(), "REJECT".into());
+        if let Some(members) = copy.get_mut("proxies").and_then(Value::as_sequence_mut) {
+            for member in members {
+                if let Some(name) = member.as_str() {
+                    if let Some(alias) = aliases.get(name) {
+                        *member = alias.clone().into();
+                    }
+                }
+            }
+        }
+        if let Some(selected) = selections
+            .get(original_name)
+            .map(String::as_str)
+            .or_else(|| group.get("default-selected").and_then(Value::as_str))
+        {
+            let runtime_selected = aliases.get(selected).map(String::as_str).unwrap_or(selected);
+            copy.insert("default-selected".into(), runtime_selected.into());
+        }
+        copies.push(Value::Mapping(copy));
+    }
+    Ok((copies, aliases))
+}
+
+fn rewrite_rule_target(
+    raw: &str,
+    groups: &std::collections::HashMap<String, String>,
+    sub_rules: &std::collections::HashMap<String, String>,
+) -> Result<String> {
+    let mut prefix = raw.trim();
+    let mut options = Vec::new();
+    loop {
+        let (before, last) = prefix
+            .rsplit_once(',')
+            .ok_or_else(|| anyhow::anyhow!("Cannot isolate APP rule target: {raw:?}"))?;
+        if matches!(last.trim(), "no-resolve" | "src") {
+            options.push(last);
+            prefix = before;
+            continue;
+        }
+        let action = last.trim();
+        let action = if raw.starts_with("SUB-RULE,") {
+            sub_rules.get(action).map(String::as_str).unwrap_or(action)
+        } else if action == "PASS" {
+            // A SUB-RULE's PASS exits to root rules. PASS-RULE remains in APP's copy.
+            "PASS-RULE"
+        } else {
+            groups.get(action).map(String::as_str).unwrap_or(action)
+        };
+        let mut result = format!("{before},{action}");
+        for option in options.iter().rev() {
+            result.push(',');
+            result.push_str(option);
+        }
+        return Ok(result);
+    }
+}
+
+fn duplicate_rule_chain(
+    config: &mut Mapping,
+    original_rules: &[Value],
+    groups: &std::collections::HashMap<String, String>,
+) -> Result<()> {
+    let original_sub_rules = config
+        .get("sub-rules")
+        .and_then(Value::as_mapping)
+        .cloned()
+        .unwrap_or_default();
+    let sub_aliases: std::collections::HashMap<String, String> = original_sub_rules
+        .keys()
+        .filter_map(Value::as_str)
+        .map(|name| (name.to_owned(), app_sub_rule_name(name)))
+        .collect();
+    let rewrite_chain = |chain: &[Value]| -> Result<Vec<Value>> {
+        chain
+            .iter()
+            .map(|rule| {
+                let value = rule
+                    .as_str()
+                    .ok_or_else(|| anyhow::anyhow!("APP rule copy requires string rules"))?;
+                rewrite_rule_target(value, groups, &sub_aliases).map(Value::from)
+            })
+            .collect()
+    };
+    let mut cloned_sub_rules = original_sub_rules.clone();
+    for (name, chain) in &original_sub_rules {
+        let name = name
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("APP sub-rule names must be strings"))?;
+        let chain = chain
+            .as_sequence()
+            .ok_or_else(|| anyhow::anyhow!("APP sub-rule chains must be sequences"))?;
+        cloned_sub_rules.insert(app_sub_rule_name(name).into(), rewrite_chain(chain)?.into());
+    }
+    let mut own_rules = rewrite_chain(original_rules)?;
+    own_rules.push("MATCH,REJECT".into());
+    cloned_sub_rules.insert(APP_RULE_CHAIN.into(), own_rules.into());
+    config.insert("sub-rules".into(), Value::Mapping(cloned_sub_rules));
+    Ok(())
+}
 pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> Result<Mapping> {
     if config.get("mode").and_then(Value::as_str) == Some("app") {
         config.insert("mode".into(), "rule".into());
@@ -177,6 +318,7 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> 
     }
 
     preserve_global_members(&config, &mut groups);
+    let original_groups = groups.clone();
     let mut rules: Vec<Value> = LOCAL_RULES.iter().map(|rule| Value::from(*rule)).collect();
     let mut claimed = Vec::new();
     let mut rule_apps = Vec::new();
@@ -194,7 +336,11 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> 
         // System/explicit HTTP and SOCKS requests must never enter APP overrides.
         let condition = logical("AND", &["IN-TYPE,TUN".into(), process]);
         match &group.target {
-            AppTarget::Rule => rule_apps.push(condition.clone()),
+            AppTarget::Rule => {
+                rule_apps.push(condition.clone());
+                rules.push(format!("SUB-RULE,({condition}),{APP_RULE_CHAIN}").into());
+                rules.push(format!("{condition},REJECT").into());
+            }
             AppTarget::Direct => rules.push(format!("{condition},DIRECT").into()),
             AppTarget::Node { name, provider } => {
                 groups.push(locked_group(&config, &group.id, name, provider));
@@ -205,6 +351,11 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> 
             }
         }
         claimed.extend(conditions);
+    }
+    if !rule_apps.is_empty() {
+        let (copies, aliases) = duplicate_groups(&original_groups, &routing.rule_selections)?;
+        duplicate_rule_chain(&mut config, &original_rules, &aliases)?;
+        groups.extend(copies);
     }
     if base_mode != "rule" {
         let condition = if rule_apps.is_empty() {
@@ -276,7 +427,10 @@ mod tests {
     fn inactive_or_non_tun_config_never_compiles_app_overrides() {
         let mut invalid = group("ai", fixed());
         invalid.node_patterns = vec!["[".into()];
-        let routing = AppRoutingConfig { groups: vec![invalid] };
+        let routing = AppRoutingConfig {
+            groups: vec![invalid],
+            rule_selections: Default::default(),
+        };
         let config = fixture();
         assert_eq!(super::apply(config.clone(), &routing, false).expect("inactive"), config);
         let mut no_tun = config;
@@ -292,6 +446,7 @@ mod tests {
             config,
             &AppRoutingConfig {
                 groups: vec![group("ai", fixed())],
+                rule_selections: Default::default(),
             },
         )
         .expect("compile");
@@ -329,11 +484,12 @@ mod tests {
             config,
             &AppRoutingConfig {
                 groups: vec![group("browser", AppTarget::Rule), group("ai", fixed())],
+                rule_selections: Default::default(),
             },
         )
         .expect("compile");
         let rules = result["rules"].as_sequence().expect("rules");
-        let fallback = rules[LOCAL_RULES.len() + 2].as_str().expect("global gate");
+        let fallback = rules[LOCAL_RULES.len() + 4].as_str().expect("global gate");
         assert!(fallback.starts_with("NOT,") && fallback.contains("IN-TYPE,TUN") && fallback.ends_with(",GLOBAL"));
         assert_eq!(&rules[rules.len() - 3..rules.len() - 1], original.as_slice());
         assert_eq!(rules.last(), Some(&Value::from("MATCH,DIRECT")));
@@ -358,10 +514,17 @@ mod tests {
                 config.clone(),
                 &AppRoutingConfig {
                     groups: vec![selected.clone()],
+                    rule_selections: Default::default(),
                 },
             )?;
             selected.node_patterns = vec![r"^(?=home-)(?!.*office)home-\d+$".into()];
-            let actual = apply(config, &AppRoutingConfig { groups: vec![selected] })?;
+            let actual = apply(
+                config,
+                &AppRoutingConfig {
+                    groups: vec![selected],
+                    rule_selections: Default::default(),
+                },
+            )?;
             assert_eq!(actual, baseline);
         }
         Ok(())
@@ -373,6 +536,7 @@ mod tests {
             fixture(),
             &AppRoutingConfig {
                 groups: vec![group("ai", fixed())],
+                rule_selections: Default::default(),
             },
         )
         .expect("compile");
@@ -403,6 +567,7 @@ mod tests {
             config,
             &AppRoutingConfig {
                 groups: vec![group("ai", fixed())],
+                rule_selections: Default::default(),
             },
         )
         .expect("compile");
@@ -425,6 +590,7 @@ mod tests {
             config,
             &AppRoutingConfig {
                 groups: vec![group("ai", target)],
+                rule_selections: Default::default(),
             },
         )
         .expect("compile");
@@ -442,13 +608,94 @@ mod tests {
             config,
             &AppRoutingConfig {
                 groups: vec![group("browser", AppTarget::Rule), group("ai", fixed())],
+                rule_selections: Default::default(),
             },
         )
         .expect("compile");
         let rules = result["rules"].as_sequence().expect("rules");
-        assert!(rules[LOCAL_RULES.len()].as_str().expect("guard").contains("NOT"));
+        assert!(
+            rules[LOCAL_RULES.len()]
+                .as_str()
+                .expect("guard")
+                .starts_with("SUB-RULE,")
+        );
         assert_eq!(&rules[rules.len() - 3..rules.len() - 1], original.as_slice());
         assert_eq!(result["proxy-groups"][0]["name"], Value::from("normal"));
+    }
+
+    #[test]
+    fn rule_mode_keeps_app_domain_routes_and_proxy_selection_independent() {
+        let mut config = fixture();
+        let original_rules = config["rules"].as_sequence().expect("rules").clone();
+        config["proxy-groups"][0]["default-selected"] = "home-2".into();
+        let mut selections = std::collections::BTreeMap::new();
+        selections.insert("normal".into(), "home-1".into());
+        let result = apply(
+            config,
+            &AppRoutingConfig {
+                groups: vec![group("browser", AppTarget::Rule)],
+                rule_selections: selections,
+            },
+        )
+        .expect("compile");
+        let alias = app_rule_group_name("normal");
+        assert_eq!(result["proxy-groups"][0]["default-selected"], "home-2");
+        let own = result["proxy-groups"]
+            .as_sequence()
+            .expect("groups")
+            .iter()
+            .find(|group| group["name"].as_str() == Some(alias.as_str()))
+            .expect("private");
+        assert_eq!(own["default-selected"], "home-1");
+        assert_eq!(own["hidden"], true);
+        let chain = result["sub-rules"][APP_RULE_CHAIN].as_sequence().expect("chain");
+        assert_eq!(chain[0], "DOMAIN,example.com,PASS-RULE");
+        assert_eq!(chain[1], Value::from(format!("MATCH,{alias}")));
+        assert_eq!(chain[2], "MATCH,REJECT");
+        let root = result["rules"].as_sequence().expect("rules");
+        assert!(
+            root[LOCAL_RULES.len()]
+                .as_str()
+                .expect("branch")
+                .starts_with("SUB-RULE,")
+        );
+        assert!(
+            root[LOCAL_RULES.len() + 1]
+                .as_str()
+                .expect("guard")
+                .ends_with(",REJECT")
+        );
+        assert_eq!(&root[root.len() - 3..root.len() - 1], original_rules.as_slice());
+    }
+
+    #[test]
+    fn nested_sub_rules_use_app_aliases_without_mutating_source() {
+        let mut config = fixture();
+        config.insert(
+            "sub-rules".into(),
+            serde_yaml_ng::from_str("nested: ['DOMAIN,foo.test,normal', 'MATCH,PASS']").expect("subs"),
+        );
+        config.insert(
+            "rules".into(),
+            serde_yaml_ng::from_str("['SUB-RULE,(NETWORK,TCP),nested', 'MATCH,normal']").expect("rules"),
+        );
+        let result = apply(
+            config,
+            &AppRoutingConfig {
+                groups: vec![group("browser", AppTarget::Rule)],
+                rule_selections: Default::default(),
+            },
+        )
+        .expect("compile");
+        let alias = app_rule_group_name("normal");
+        assert_eq!(result["sub-rules"]["nested"][0], "DOMAIN,foo.test,normal");
+        let copied = &result["sub-rules"][app_sub_rule_name("nested")];
+        assert_eq!(copied[0], Value::from(format!("DOMAIN,foo.test,{alias}")));
+        assert_eq!(copied[1], "MATCH,PASS-RULE");
+        assert_eq!(
+            result["sub-rules"][APP_RULE_CHAIN][0],
+            Value::from(format!("SUB-RULE,(NETWORK,TCP),{}", app_sub_rule_name("nested")))
+        );
     }
 
     #[test]
@@ -461,7 +708,14 @@ mod tests {
         );
         let mut disabled = group("ai", fixed());
         disabled.enabled = false;
-        let result = apply(fixture(), &AppRoutingConfig { groups: vec![disabled] }).expect("compile");
+        let result = apply(
+            fixture(),
+            &AppRoutingConfig {
+                groups: vec![disabled],
+                rule_selections: Default::default(),
+            },
+        )
+        .expect("compile");
         assert_eq!(result["proxy-groups"].as_sequence().expect("groups").len(), 2);
     }
 
@@ -476,6 +730,13 @@ mod tests {
         }
         let mut invalid = group("ai", fixed());
         invalid.node_patterns = vec!["[".into()];
-        assert!(AppRoutingConfig { groups: vec![invalid] }.validate().is_err());
+        assert!(
+            AppRoutingConfig {
+                groups: vec![invalid],
+                rule_selections: Default::default(),
+            }
+            .validate()
+            .is_err()
+        );
     }
 }

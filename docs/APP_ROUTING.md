@@ -4,7 +4,7 @@
 
 ## 1. 状态模型
 
-覆盖层由 Verge 配置中的 `enable_app_routing` 控制，`app_routing.groups` 持久化分组及固定节点身份。默认出口仍使用 Clash 模式 `rule` / `global` / `direct`，APP 不是独立核心模式。
+覆盖层由 Verge 配置中的 `enable_app_routing` 控制，`app_routing.groups` 持久化分组及固定节点身份，`app_routing.rule_selections` 独立保存 APP 规则代理组的节点选择。默认出口仍使用 Clash 模式 `rule` / `global` / `direct`，APP 不是独立核心模式。
 
 激活条件：
 
@@ -24,10 +24,11 @@ effective_app_routing =
 配置生成器在订阅合并及配置增强之后执行。覆盖层开启时，保存的默认模式先进入 `base_mode`，内核运行模式转换为 `rule`，然后按以下顺序生成规则：
 
 1. 本地目的地址直连特例；
-2. 按用户定义顺序生成 APP 分组条件；
-3. 若默认模式为 `global` 或 `direct`，为未分配至规则委托的连接增加相应终结出口；
-4. 保留订阅已有的顶层规则；
-5. 添加末端 `MATCH,DIRECT` 保底。
+2. 按用户定义顺序生成 APP 分组条件；规则模式的进程流量进入独立的 `SUB-RULE` 规则链；
+3. 复制原订阅规则与代理组（包括嵌套子规则），给 APP 代理组生成私有名称、独立选择与终结拒绝规则；
+4. 若默认模式为 `global` 或 `direct`，为未命中 APP 规则组的连接增加相应终结出口；
+5. 保留订阅已有的顶层规则与原代理组，不修改 TUN 的规则顺序与选中节点；
+6. 添加末端 `MATCH,DIRECT` 保底。
 
 APP 规则使用 `IN-TYPE,TUN` 与进程表达式组合。因此，同一内核的显式 HTTP/SOCKS 代理入站不会命中 APP 分组覆盖。
 
@@ -35,7 +36,7 @@ APP 规则使用 `IN-TYPE,TUN` 与进程表达式组合。因此，同一内核�
 
 `AppMatcher` 支持两类字面量：`Name` 和 `Path`。生成器将输入转义并锚定为精确匹配，Windows 使用大小写不敏感规则。多个程序条件取 OR；对于已由更高优先级分组声明的程序，后续分组加入 NOT 保护，**首个启用的匹配组决定出口**。
 
-`AppTarget::Rule` 将程序委托给原始顶层规则链，不创建候选节点表。`AppTarget::Node` 创建隐藏的 `__CV_APP_<group-id>` 选择组，只允许选中的代理节点或其原始 provider，并在分流规则后追加相同进程条件的 `REJECT` 兜底。历史 `Direct` 目标仍由后端识别，但新的分组 UI 不提供该选项。
+`AppTarget::Rule` 不再委托给原始顶层规则链，而是进入 `__CV_APP_RULES` 独立子规则链。编译器复制当前订阅的全部可用代理组，以十六进制编码后的稳定名称 `__CV_APP_RULE_<hex-UTF8-original-name>` 隐藏存放。规则目标被重写为 APP 私有组；`sub-rules` 也复制为私有名称，原链不变。APP 规则代理组的选择保存于 `app_routing.rule_selections`，在「代理 → APP 分组」单独调整；不会改变 TUN 代理组的选择。`AppTarget::Node` 创建隐藏的 `__CV_APP_<group-id>` 选择组，只允许选中的代理节点或其原始 provider，并在分流规则后追加相同进程条件的 `REJECT` 兜底。历史 `Direct` 目标仍由后端识别，但新的分组 UI 不提供该选项。
 
 ### 默认出口
 
@@ -43,7 +44,9 @@ APP 规则使用 `IN-TYPE,TUN` 与进程表达式组合。因此，同一内核�
 - `global`：生成器将未被委托的连接转到 `GLOBAL`，同时保持已选节点不受 APP 分组影响。可选择的全局成员取自 APP 私有分组加入**之前**的内核列表，防止私有组污染全局候选。
 - `direct`：未被委托的连接走 `DIRECT`。
 
-全局模式与规则模式的交替并非二次代理；每条连接仅在当前规则链中选择一次终结出口。
+全局模式与规则模式的交替并非二次代理；每条连接仅在当前规则链中选择一次终结出口。APP 私有子规则链尾部增加 `MATCH,REJECT`，且根规则内进程入口后有对应 `REJECT`，防止 UDP 不支持或子规则提前退出造成回退到 TUN 出口。复制后的 `PASS` 转为 `PASS-RULE`，避免跳回 TUN 根规则链。
+
+**隔离边界**：独立的是进程分支的域名规则决策及代理组节点选择。两套逻辑仍在同一 Mihomo 内核运行，共享 TUN 捕获、DNS 引擎、规则集与订阅更新；这里不实现独立 DNS 实例或双重代理。更新订阅后副本由最新合成配置重新生成，持久化选择按代理组原名复用。
 
 ## 3. 本地目标优先级
 
@@ -75,6 +78,6 @@ APP 规则使用 `IN-TYPE,TUN` 与进程表达式组合。因此，同一内核�
 
 服务与上游使用不同的 SCM 服务名、可执行文件、IPC 通道、配置根目录和内核名称；GUI 与服务的私有协议版本校验必须一致。运行时资源由当前发行版的安装器部署，不能把上游服务改名后替换。
 
-路由覆盖层在隔离入站模拟与真实 Mihomo 内核配置解析中经过验证；生产网络中的完整 TUN 端到端行为仍依赖操作系统环境与实际进程识别。
+隔离配置的合成、UI 选择与 Mihomo 配置解析可分别进行回归检查；生产网络中的完整 TUN 端到端行为仍依赖操作系统环境、进程识别及内核版本。
 
 **代码锚点**：`src-tauri/src/enhance/app_routing.rs`、`src-tauri/src/config/app_routing.rs`、`src-tauri/src/feat/app_routing.rs`、`src/components/app-rules/app-proxy-groups.tsx`、`src/pages/proxies.tsx`。

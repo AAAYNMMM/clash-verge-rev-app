@@ -7,6 +7,8 @@ use std::collections::HashSet;
 #[serde(default)]
 pub struct AppRoutingConfig {
     pub groups: Vec<AppRoutingGroup>,
+    #[serde(default)]
+    pub rule_selections: std::collections::BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

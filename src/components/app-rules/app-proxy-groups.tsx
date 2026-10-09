@@ -39,6 +39,8 @@ import {
 } from '@/utils/app-routing'
 import { appRoutingActive } from '@/utils/proxy-mode'
 
+import { AppRuleSelectors } from './app-rule-selectors'
+
 interface GroupProps {
   group: AppRoutingGroup
   nodes: ProxyNodeView[]
@@ -403,20 +405,23 @@ export const AppProxyGroups = () => {
             </Button>
           </Paper>
         ) : (
-          groups.map((group) => (
-            <AppProxyGroup
-              key={group.id}
-              group={group}
-              nodes={nodes}
-              loading={isProxyViewPending}
-              unavailable={isProxyViewError}
-              busy={pendingKey !== null || !appRoutingActive(verge)}
-              pendingKey={pendingKey}
-              onSelect={(group, node) => {
-                void select(group, node)
-              }}
-            />
-          ))
+          <>
+            <AppRuleSelectors />
+            {groups.map((group) => (
+              <AppProxyGroup
+                key={group.id}
+                group={group}
+                nodes={nodes}
+                loading={isProxyViewPending}
+                unavailable={isProxyViewError}
+                busy={pendingKey !== null || !appRoutingActive(verge)}
+                pendingKey={pendingKey}
+                onSelect={(group, node) => {
+                  void select(group, node)
+                }}
+              />
+            ))}
+          </>
         )}
       </Stack>
     </Box>

@@ -643,6 +643,8 @@ export interface TranslationResources {
         groupsPageHelp: string
         groupsPageTitle: string
         inactive: string
+        independentRuleGroups: string
+        independentRuleHelp: string
         intro: string
         legacyDirect: string
         loading: string
@@ -671,8 +673,10 @@ export interface TranslationResources {
         refreshNodes: string
         routeMode: string
         ruleGroupSummary: string
+        ruleGroupsUnavailable: string
         ruleHelp: string
         ruleMode: string
+        ruleNodeNotSelected: string
         runningApps: string
         runningAppsHelp: string
         save: string

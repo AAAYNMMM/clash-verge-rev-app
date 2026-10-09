@@ -10,6 +10,12 @@ import { AppProxyGroups } from './app-proxy-groups'
 const state = vi.hoisted(() => ({
   groups: [] as AppRoutingGroup[],
   nodes: [] as ProxyNodeView[],
+  ruleCopies: [] as Array<{
+    name: string
+    type: string
+    now: string
+    members: Array<{ kind: 'node'; name: string; recordId: string }>
+  }>,
 }))
 vi.mock('react-router', () => ({ useNavigate: () => vi.fn() }))
 vi.mock('react-i18next', () => ({
@@ -32,6 +38,7 @@ vi.mock('@/providers/app-data-context', () => ({
         { name: 'Upstream selector' },
         { name: 'Automatic testing' },
         { name: 'Fallback' },
+        ...state.ruleCopies,
       ],
       records: Object.fromEntries(
         state.nodes.map((node) => [node.recordId, node]),
@@ -57,6 +64,7 @@ vi.mock('@/services/query-client', () => ({
 }))
 
 beforeEach(() => {
+  state.ruleCopies = []
   state.groups = [
     {
       id: 'ai',
@@ -106,12 +114,34 @@ it('renders only user APP groups, matching nodes and the saved selection', () =>
   expect(html.match(/aria-checked="true"/g)).toHaveLength(1)
 })
 
-it('does not render independent nodes for a rule-delegated group', () => {
+it('does not render private selectors for an inactive rule group', () => {
   state.groups = state.groups.filter((group) => group.target.kind === 'rule')
   const html = renderToStaticMarkup(createElement(AppProxyGroups))
   expect(html).toContain('My browsers')
   expect(html).toContain('rules.appRouting.ruleGroupSummary')
   expect(html).not.toContain('role="radio"')
+})
+
+it('shows private APP Rule selectors without displaying the default TUN groups', () => {
+  state.groups = state.groups.filter((group) => group.target.kind === 'rule')
+  state.groups[0].apps = [{ kind: 'name', value: 'chrome.exe' }]
+  state.ruleCopies = [
+    {
+      name: '__CV_APP_RULE_50524f5859',
+      type: 'Selector',
+      now: 'Japan normal',
+      members: [
+        { kind: 'node', name: 'Japan normal', recordId: 'japan' },
+        { kind: 'node', name: 'Residential', recordId: 'residential' },
+      ],
+    },
+  ]
+  const html = renderToStaticMarkup(createElement(AppProxyGroups))
+  expect(html).toContain('rules.appRouting.independentRuleGroups')
+  expect(html).toContain('PROXY')
+  expect(html).toContain('Japan normal')
+  expect(html).toContain('aria-label="PROXY"')
+  expect(html).not.toContain('Upstream selector')
 })
 
 it('shows setup guidance rather than subscription groups when no APP groups exist', () => {

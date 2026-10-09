@@ -1,6 +1,6 @@
 # Clash Verge Rev App
 
-Independent fork of [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev), extending [Mihomo](https://github.com/MetaCubeX/mihomo) with **TUN-scoped, process-based outbound overrides**. Selected applications use manually pinned exits; all other traffic retains the configured Rule, Global, or Direct behavior. Not affiliated with the upstream release project.
+Independent fork of [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev), extending [Mihomo](https://github.com/MetaCubeX/mihomo) with **TUN-scoped, process-based outbound overrides**. Selected applications use either pinned exits or an independent copy of the active profile’s domain rules and proxy selectors. Unmatched traffic retains the TUN Rule, Global, or Direct behavior. Not affiliated with the upstream release project.
 
 **Published artifact: `v2.5.13` · Windows x64 test prerelease.**
 [Release](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.13) · [Routing contract](APP_ROUTING.md) · [中文](../README.md) · [License](../LICENSE)
@@ -10,25 +10,25 @@ Independent fork of [Clash Verge Rev](https://github.com/clash-verge-rev/clash-v
 APP routing is an independent overlay, not an additional mutually exclusive Mihomo mode. It becomes effective only when TUN is enabled and system proxy is disabled. Changing either transport condition disables the overlay without discarding group selections or the underlying outbound mode.
 
 ~~~text
-           Mihomo routing engine
-                   │
-          Local destination rules
-                   │
-           TUN ingress condition
-           ┌───────┴────────┐
-           │                │
-      APP matches      Non-APP ingress
-           │                │
-     Fixed exit / Rule      │
-          └───────────┬─────┘
-                      │
-            Rule / Global / Direct
+                       Mihomo
+                         │
+                Local destination guard
+                         │
+                  TUN process match
+                ┌────────┴────────┐
+           Matched APP        Other traffic
+                │                 │
+          ┌─────┴──────┐          │
+       Pinned exit  APP rule copy  │
+          │            │          │
+       Fixed node  DIRECT / APP     Original Rule /
+                   private groups  Global / Direct
 ~~~
 
 - **Match precedence**: local destination exceptions, then ordered APP groups, then the default exit. The first enabled group matching an executable wins.
 - **Executable identity**: exact, escaped matching by process name or full executable path; rendered as Mihomo `PROCESS-NAME-REGEX` / `PROCESS-PATH-REGEX` rules.
 - **Pinned exits**: a group retains one manually selected node and provider identity. Missing, unusable, or unsupported exits fail closed; there is no implicit failover or fallback to Global, subscription rules, or Direct.
-- **Rule delegation**: a group can re-enter the original subscription rule chain without inheriting Global fallback from unrelated connections.
+- **Private APP Rule chain**: Rule-mode groups use a separate copy of subscription rules and proxy selectors. Domain DIRECT decisions remain direct; independent node choices do not alter TUN selectors.
 - **Default exit**: unmatched connections continue to Rule, Global, or Direct, rather than becoming implicitly direct.
 
 When the overlay is active, the generated Mihomo config uses `mode: rule`. A configured Global default is modeled by an explicit `GLOBAL` selector for traffic not captured by an APP override. When the overlay is inactive, the core uses the native selected mode. The compiler is implemented in `src-tauri/src/enhance/app_routing.rs`.

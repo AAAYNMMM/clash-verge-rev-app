@@ -19,6 +19,7 @@ export interface AppRoutingGroup {
 
 export interface AppRoutingConfig {
   groups: AppRoutingGroup[]
+  rule_selections?: Record<string, string>
 }
 
 export interface RunningApp {
