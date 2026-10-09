@@ -49,7 +49,8 @@ pub(super) async fn apply_verge_patch_locked(
     patch: &IVerge,
     not_save_file: bool,
 ) -> Result<()> {
-    let patch = normalize_app_patch(&Config::verge().await.latest_arc(), patch)?;
+    let current = Config::verge().await.latest_arc();
+    let patch = normalize_app_patch(&current, patch)?;
     if let Some(routing) = &patch.app_routing {
         routing.validate()?;
     }
@@ -59,7 +60,7 @@ pub(super) async fn apply_verge_patch_locked(
             patch: &patch,
             persist: !not_save_file,
         },
-        super::effects::verge_effects(&patch),
+        verge_patch_effects(&current, &patch),
     )
     .await
 }
@@ -68,6 +69,17 @@ pub async fn fetch_verge_config() -> Result<SharedDraft<IVerge>> {
     let draft = Config::verge().await;
     let data = draft.data_arc();
     Ok(data)
+}
+
+fn verge_patch_effects(current: &IVerge, patch: &IVerge) -> super::effects::Effects {
+    let mut next = current.clone();
+    next.patch_config(patch);
+    let mut effect_patch = patch.clone();
+    // Editing inactive APP choices must not reload or start the core.
+    if !current.app_routing_active() && !next.app_routing_active() {
+        effect_patch.app_routing = None;
+    }
+    super::effects::verge_effects(&effect_patch)
 }
 
 fn normalize_app_patch(current: &IVerge, patch: &IVerge) -> Result<IVerge> {
@@ -87,6 +99,42 @@ fn normalize_app_patch(current: &IVerge, patch: &IVerge) -> Result<IVerge> {
 #[cfg(test)]
 mod app_overlay_tests {
     use super::*;
+
+    #[test]
+    fn inactive_app_choices_persist_without_changing_core_or_enable_state() -> Result<()> {
+        use super::super::effects::Effect;
+        let current = IVerge {
+            enable_tun_mode: Some(true),
+            enable_system_proxy: Some(false),
+            enable_app_routing: Some(false),
+            ..Default::default()
+        };
+        let patch = normalize_app_patch(
+            &current,
+            &IVerge {
+                app_routing: Some(Default::default()),
+                ..Default::default()
+            },
+        )?;
+        assert!(patch.enable_app_routing.is_none());
+        assert!(verge_patch_effects(&current, &patch).is_empty());
+        let enabling = IVerge {
+            enable_app_routing: Some(true),
+            ..patch.clone()
+        };
+        assert!(verge_patch_effects(&current, &enabling).contains(&Effect::ClashConfig));
+        let active = IVerge {
+            enable_app_routing: Some(true),
+            ..current.clone()
+        };
+        assert!(verge_patch_effects(&active, &patch).contains(&Effect::ClashConfig));
+        let mixed = IVerge {
+            enable_tun_mode: Some(false),
+            ..patch
+        };
+        assert!(verge_patch_effects(&current, &mixed).contains(&Effect::ClashConfig));
+        Ok(())
+    }
 
     #[test]
     fn app_enable_requires_tun_and_no_system_proxy() {

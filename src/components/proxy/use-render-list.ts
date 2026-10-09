@@ -14,6 +14,7 @@ import {
   type ProxyViewV1,
   type ResolvedProxyMember,
 } from '@/types/proxy-view'
+import { withAppProxyGroups } from '@/utils/app-proxy-view'
 import { debugLog } from '@/utils/debug'
 
 import { filterSort } from './use-filter-sort'
@@ -126,9 +127,18 @@ export const useRenderList = (
   selectedGroup?: string | null,
   appGroups?: ProxyGroupView[],
 ) => {
-  const { proxyView } = useProxiesData()
+  const { proxyView: liveView } = useProxiesData()
   const { refreshProxy } = useAppRefreshers()
   const { verge } = useVerge()
+  const proxyView = useMemo(
+    () =>
+      withAppProxyGroups(
+        liveView,
+        appGroups,
+        verge?.app_routing?.rule_selections,
+      ),
+    [liveView, appGroups, verge?.app_routing?.rule_selections],
+  )
   const { width } = useWindowWidth()
   const [headStates, setHeadState] = useHeadStateNew()
   const latencyTimeout = verge?.default_latency_timeout

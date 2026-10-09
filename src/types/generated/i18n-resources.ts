@@ -685,6 +685,7 @@ export interface TranslationResources {
         searchApps: string
         selectedTarget: string
         selectNode: string
+        switchNodes: string
         timeout: string
         title: string
         toggle: string

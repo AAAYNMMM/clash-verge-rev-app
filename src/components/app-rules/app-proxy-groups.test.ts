@@ -3,7 +3,11 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, expect, it, vi } from 'vitest'
 
 import type { AppRoutingGroup } from '@/types/app-routing'
-import type { ProxyGroupView, ProxyNodeView } from '@/types/proxy-view'
+import type {
+  ProxyGroupView,
+  ProxyNodeView,
+  ResolvedProxyMember,
+} from '@/types/proxy-view'
 
 import { AppProxyGroups } from './app-proxy-groups'
 
@@ -12,6 +16,15 @@ const state = vi.hoisted(() => ({
   nodes: [] as ProxyNodeView[],
   privateCopies: [] as ProxyGroupView[],
   selected: [] as string[],
+  active: true,
+  baseGroups: [] as ProxyGroupView[],
+  renderedGroups: [] as ProxyGroupView[],
+  select: undefined as
+    | ((group: ProxyGroupView, member: ResolvedProxyMember) => void)
+    | undefined,
+  patch: vi.fn(async () => {}),
+  refresh: vi.fn(async () => {}),
+  coreSelect: vi.fn(async () => {}),
 }))
 
 vi.mock('react-router', () => ({ useNavigate: () => vi.fn() }))
@@ -23,10 +36,10 @@ vi.mock('@/hooks/use-verge', () => ({
     verge: {
       app_routing: { groups: state.groups },
       enable_tun_mode: true,
-      enable_app_routing: true,
+      enable_app_routing: state.active,
       enable_system_proxy: false,
     },
-    patchVerge: vi.fn(),
+    patchVerge: state.patch,
   }),
 }))
 vi.mock('@/providers/app-data-context', () => ({
@@ -37,10 +50,7 @@ vi.mock('@/providers/app-data-context', () => ({
       providerState: 'ready',
       global: null,
       direct: 'DIRECT',
-      groups: [
-        { name: 'Default TUN selector', type: 'Selector' },
-        ...state.privateCopies,
-      ],
+      groups: [...state.baseGroups, ...state.privateCopies],
       records: Object.fromEntries(
         state.nodes.map((node) => [node.recordId, node]),
       ),
@@ -50,7 +60,7 @@ vi.mock('@/providers/app-data-context', () => ({
     isProxyViewPending: false,
     isProxyViewError: false,
   }),
-  useAppRefreshers: () => ({ refreshProxy: vi.fn() }),
+  useAppRefreshers: () => ({ refreshProxy: state.refresh }),
 }))
 vi.mock('@/components/base', () => ({
   BaseLoading: () => createElement('p', null, 'Loading'),
@@ -59,11 +69,15 @@ vi.mock('@/components/proxy/proxy-groups', () => ({
   ProxyGroups: ({
     mode,
     appGroups,
+    onAppSelect,
   }: {
     mode: string
     appGroups: ProxyGroupView[]
-  }) =>
-    createElement(
+    onAppSelect?: (group: ProxyGroupView, member: ResolvedProxyMember) => void
+  }) => {
+    state.select = onAppSelect
+    state.renderedGroups = appGroups
+    return createElement(
       'section',
       { 'data-mode': mode },
       ...appGroups.map((group) =>
@@ -80,7 +94,11 @@ vi.mock('@/components/proxy/proxy-groups', () => ({
           ),
         ),
       ),
-    ),
+    )
+  },
+}))
+vi.mock('tauri-plugin-mihomo-api', () => ({
+  selectNodeForGroup: state.coreSelect,
 }))
 vi.mock('@/services/cmds', () => ({
   matchAppNodes: vi.fn(),
@@ -116,6 +134,13 @@ const privateGroup = (name: string): ProxyGroupView => ({
 })
 
 beforeEach(() => {
+  state.active = true
+  state.baseGroups = []
+  state.renderedGroups = []
+  state.select = undefined
+  state.patch.mockClear()
+  state.refresh.mockClear()
+  state.coreSelect.mockClear()
   state.selected = []
   state.privateCopies = []
   state.groups = [
@@ -182,4 +207,39 @@ it('does not display disabled fixed-node groups in the live proxy view', () => {
   state.groups[0].enabled = false
   const html = renderToStaticMarkup(createElement(AppProxyGroups))
   expect(html).not.toContain('data-name="My AI apps"')
+})
+
+it('saves an inactive APP node preference without enabling routing or touching a live selector', async () => {
+  state.active = false
+  state.groups = state.groups.filter((group) => group.target.kind === 'rule')
+  state.baseGroups = [
+    {
+      ...privateGroup('Main'),
+      name: 'Main',
+      hidden: false,
+      now: 'home-1',
+      members: [
+        { kind: 'node', name: 'home-1', recordId: 'home-1' },
+        { kind: 'node', name: 'home-2', recordId: 'home-2' },
+      ],
+    },
+  ]
+  const html = renderToStaticMarkup(createElement(AppProxyGroups))
+  expect(html).toContain('data-name="Main"')
+  const group = state.renderedGroups[0]
+  const node = state.nodes.find((entry) => entry.name === 'home-2')!
+  state.select!(group, {
+    kind: 'node',
+    ref: { kind: 'node', name: 'home-2', recordId: 'home-2' },
+    node,
+  })
+  await vi.waitFor(() => expect(state.refresh).toHaveBeenCalledOnce())
+  expect(state.patch).toHaveBeenCalledWith({
+    app_routing: {
+      groups: state.groups,
+      rule_selections: { Main: 'home-2' },
+    },
+  })
+  expect(state.coreSelect).not.toHaveBeenCalled()
+  expect(state.active).toBe(false)
 })

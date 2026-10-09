@@ -5,7 +5,6 @@ import { useCallback, useEffect, useReducer, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { AppProxyGroups } from '@/components/app-rules/app-proxy-groups'
-import { AppRoutingToggle } from '@/components/app-rules/app-routing-toggle'
 import { BasePage, TooltipIcon } from '@/components/base'
 import { ProviderButton } from '@/components/proxy/provider-button'
 import { ProxyGroups } from '@/components/proxy/proxy-groups'
@@ -55,7 +54,9 @@ const ProxyPage = () => {
   const { clashConfig } = useClashConfigData()
   const { verge } = useVerge()
   const appActive = appRoutingActive(verge)
-  const [nodeView, setNodeView] = useState<'app' | 'default'>('app')
+  const [nodeView, setNodeView] = useState<'app' | 'default'>(() =>
+    appActive ? 'app' : 'default',
+  )
   const { data: savedMode } = useClashMode()
   const { refreshClashConfig } = useAppRefreshers()
 
@@ -65,7 +66,7 @@ const ProxyPage = () => {
 
   const normalizedMode = clashConfig?.mode?.toLowerCase()
   const curMode = resolveProxyMode(savedMode, normalizedMode, appActive)
-  const isAppView = appActive && nodeView === 'app' && !isChainMode
+  const isAppView = nodeView === 'app' && !isChainMode
   const chainWarning = t('proxies.page.chain.warning')
 
   const onChangeMode = useLockFn(async (mode: Mode) => {
@@ -184,19 +185,20 @@ const ProxyPage = () => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <ProviderButton />
           <ButtonGroup size="small">
-            <AppRoutingToggle
-              grouped
-              selected={isAppView}
-              onEnabled={() => {
+            <Button
+              disabled={!verge}
+              aria-label={t('rules.appRouting.switchNodes')}
+              title={t('rules.appRouting.switchNodes')}
+              aria-pressed={isAppView}
+              variant={isAppView ? 'contained' : 'outlined'}
+              onClick={() => {
                 setNodeView('app')
                 if (isChainMode) void onToggleChainMode()
               }}
-              onActiveSelect={() => {
-                setNodeView('app')
-                if (isChainMode) void onToggleChainMode()
-              }}
-              onDisabled={() => setNodeView('default')}
-            />
+              sx={{ textTransform: 'none' }}
+            >
+              APP
+            </Button>
             {MODES.map((mode) => (
               <Button
                 key={mode}

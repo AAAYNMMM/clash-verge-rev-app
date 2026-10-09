@@ -13,7 +13,7 @@ const LIGHT_BACKGROUND_COLOR: Color = Color(245, 245, 245, 255); // #F5F5F5
 const DARK_BACKGROUND_HEX: &str = "#2E303D";
 const LIGHT_BACKGROUND_HEX: &str = "#F5F5F5";
 
-const DEFAULT_WIDTH: f64 = 940.0;
+const DEFAULT_WIDTH: f64 = 955.0;
 const DEFAULT_HEIGHT: f64 = 700.0;
 
 const MINIMAL_WIDTH: f64 = 520.0;

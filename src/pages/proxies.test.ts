@@ -120,9 +120,7 @@ it.each(['rule', 'global', 'direct'])(
 
 it('puts APP beside Rule, Global and Direct without the redundant default-exit tabs', () => {
   const html = renderToStaticMarkup(createElement(ProxyPage))
-  expect(html).toContain(
-    'aria-label="rules.appRouting.toggle" aria-pressed="true"',
-  )
+  expect(html).toContain('aria-label="rules.appRouting.switchNodes"')
   expect(html).not.toContain('rules.appRouting.defaultExit')
   expect(html).not.toContain('rules.appRouting.groupsPageTitle')
   expect(html).toContain('role="group"')
@@ -135,13 +133,19 @@ it('puts APP beside Rule, Global and Direct without the redundant default-exit t
 it.each([
   { tun: false, system: false },
   { tun: true, system: true },
-])('disables APP with incompatible transport settings %j', (transport) => {
-  Object.assign(state, transport)
-  const html = renderToStaticMarkup(createElement(ProxyPage))
-  expect(html).not.toContain('data-view="app-groups"')
-  expect(html).toContain('data-mode="global"')
-  expect(html).toContain('rules.appRouting.tunDisabled')
-  expect(html).toContain(
-    'aria-label="rules.appRouting.toggle" aria-pressed="false"',
-  )
-})
+])(
+  'keeps APP node navigation available with routing disabled by transport %j',
+  (transport) => {
+    Object.assign(state, transport)
+    const html = renderToStaticMarkup(createElement(ProxyPage))
+    expect(html).not.toContain('data-view="app-groups"')
+    expect(html).toContain('data-mode="global"')
+    expect(html).not.toContain('rules.appRouting.tunDisabled')
+    expect(html).not.toContain('rules.appRouting.toggle')
+    const button = html.match(
+      /<button[^>]*aria-label="rules.appRouting.switchNodes"[^>]*>/,
+    )?.[0]
+    expect(button).toBeDefined()
+    expect(button).not.toContain('disabled')
+  },
+)

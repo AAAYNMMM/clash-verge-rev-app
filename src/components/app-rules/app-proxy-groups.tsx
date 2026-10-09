@@ -26,6 +26,8 @@ export const AppProxyGroups = () => {
   const { verge, patchVerge } = useVerge()
   const { proxyView, isProxyViewPending } = useProxiesData()
   const { refreshProxy } = useAppRefreshers()
+  const active = appRoutingActive(verge)
+  const selections = verge?.app_routing?.rule_selections
   const groups = verge?.app_routing?.groups
   const nodes = useMemo(() => appNodes(proxyView), [proxyView])
   const nodeNames = useMemo(
@@ -67,8 +69,10 @@ export const AppProxyGroups = () => {
         groups ?? [],
         nodes,
         candidates.data ?? {},
+        selections,
+        active,
       ),
-    [proxyView, groups, nodes, candidates.data],
+    [proxyView, groups, nodes, candidates.data, selections, active],
   )
   const [pending, setPending] = useState(false)
   const writingRef = useRef(false)
@@ -76,7 +80,6 @@ export const AppProxyGroups = () => {
   const select = async (group: ProxyGroupView, member: ResolvedProxyMember) => {
     if (
       writingRef.current ||
-      !appRoutingActive(verge) ||
       !verge?.app_routing ||
       member.kind === 'unresolved'
     )
@@ -114,7 +117,7 @@ export const AppProxyGroups = () => {
             },
           },
         })
-        await selectNodeForGroup(group.name, member.ref.name)
+        if (active) await selectNodeForGroup(group.name, member.ref.name)
       } else if (fixed && member.kind === 'node') {
         await mutate(() => selectAppGroupNode(fixed.id, member.node.recordId), {
           id: 'patch-verge-config',
@@ -136,7 +139,11 @@ export const AppProxyGroups = () => {
     }
   }
 
-  if (!verge || isProxyViewPending || candidates.isPending)
+  if (
+    !verge ||
+    isProxyViewPending ||
+    (fixedGroups.length > 0 && candidates.isPending)
+  )
     return <BaseLoading />
 
   if (!visibleGroups.length) {

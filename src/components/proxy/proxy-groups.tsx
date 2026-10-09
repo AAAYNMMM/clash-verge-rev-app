@@ -33,6 +33,7 @@ import {
   type ProxyGroupView,
   type ResolvedProxyMember,
 } from '@/types/proxy-view'
+import { withAppProxyGroups } from '@/utils/app-proxy-view'
 import { debugLog } from '@/utils/debug'
 
 import { ProxyEmptyState } from './proxy-empty-state'
@@ -93,7 +94,16 @@ function useProxyRenderState(
   appGroups?: ProxyGroupView[],
 ) {
   const { verge } = useVerge()
-  const { proxyView } = useProxiesData()
+  const { proxyView: liveView } = useProxiesData()
+  const proxyView = useMemo(
+    () =>
+      withAppProxyGroups(
+        liveView,
+        appGroups,
+        verge?.app_routing?.rule_selections,
+      ),
+    [liveView, appGroups, verge?.app_routing?.rule_selections],
+  )
   const { renderList, onProxies, onHeadState } = useRenderList(
     mode,
     isChainMode,

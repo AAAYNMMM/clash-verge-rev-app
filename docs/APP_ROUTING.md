@@ -36,7 +36,9 @@ APP 规则使用 `IN-TYPE,TUN` 与进程表达式组合。因此，同一内核�
 
 `AppMatcher` 支持两类字面量：`Name` 和 `Path`。生成器将输入转义并锚定为精确匹配，Windows 使用大小写不敏感规则。多个程序条件取 OR；对于已由更高优先级分组声明的程序，后续分组加入 NOT 保护，**首个启用的匹配组决定出口**。
 
-`AppTarget::Rule` 不再委托给原始顶层规则链，而是进入 `__CV_APP_RULES` 独立子规则链。编译器复制当前订阅的全部可用代理组，以十六进制编码后的稳定名称 `__CV_APP_RULE_<hex-UTF8-original-name>` 隐藏存放。规则目标被重写为 APP 私有组；`sub-rules` 也复制为私有名称，原链不变。APP 规则代理组的选择保存于 `app_routing.rule_selections`，在「代理 → APP 分组」单独调整；不会改变 TUN 代理组的选择。`AppTarget::Node` 创建隐藏的 `__CV_APP_<group-id>` 选择组，只允许选中的代理节点或其原始 provider，并在分流规则后追加相同进程条件的 `REJECT` 兜底。历史 `Direct` 目标仍由后端识别，但新的分组 UI 不提供该选项。
+`AppTarget::Rule` 不再委托给原始顶层规则链，而是进入 `__CV_APP_RULES` 独立子规则链。编译器复制当前订阅的全部可用代理组，以十六进制编码后的稳定名称 `__CV_APP_RULE_<hex-UTF8-original-name>` 隐藏存放。规则目标被重写为 APP 私有组；`sub-rules` 也复制为私有名称，原链不变。APP 规则代理组的选择保存于 `app_routing.rule_selections`，在「代理 → APP」单独调整；不会改变 TUN 代理组的选择。`AppTarget::Node` 创建隐藏的 `__CV_APP_<group-id>` 选择组，只允许选中的代理节点或其原始 provider，并在分流规则后追加相同进程条件的 `REJECT` 兜底。历史 `Direct` 目标仍由后端识别，但新的分组 UI 不提供该选项。
+
+代理页的 APP 按钮只切换节点视图，不修改 `enable_app_routing`。分流关闭时仍可编辑节点选择：APP 规则代理组以订阅组结构生成独立预览，节点选择仅持久化，不重载或启动内核；实际分流由首页或 APP 规则页的独立开关启用。
 
 ### 默认出口
 

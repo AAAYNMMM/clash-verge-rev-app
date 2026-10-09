@@ -445,6 +445,7 @@ export const translationKeys = [
   'rules.appRouting.noApplications',
   'rules.appRouting.failedNode',
   'rules.appRouting.selectNode',
+  'rules.appRouting.switchNodes',
   'rules.appRouting.connectionHelp',
   'rules.appRouting.deleteConfirm',
   'rules.appRouting.directHelp',

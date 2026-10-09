@@ -12,6 +12,7 @@ import {
   appProxyGroupsForView,
   displayAppProxyName,
   originalAppRuleGroupName,
+  withAppProxyGroups,
 } from './app-proxy-view'
 
 const proxyGroup = (name: string, hidden = false): ProxyGroupView => ({
@@ -146,4 +147,50 @@ it('keeps same-name fixed-node selections bound to the saved provider', () => {
   expect(
     isSelectedProxyMember(missing, resolveMember(live, missing.members[0])),
   ).toBe(false)
+})
+
+it('keeps inactive APP selections and nested groups independent from TUN without starting routing', () => {
+  const child = {
+    ...proxyGroup('Child'),
+    now: 'home',
+    members: [
+      { kind: 'node' as const, name: 'Japan', recordId: 'jp' },
+      { kind: 'node' as const, name: 'home', recordId: 'home' },
+    ],
+  }
+  const root = {
+    ...proxyGroup('Root'),
+    now: 'Child',
+    members: [{ kind: 'group' as const, name: 'Child' }],
+  }
+  const live = { ...view, groups: [root, child] }
+  const configured: AppRoutingGroup = {
+    id: 'browser',
+    name: 'Browser',
+    enabled: true,
+    apps: [{ kind: 'name', value: 'chrome.exe' }],
+    node_patterns: [],
+    target: { kind: 'rule' },
+  }
+  const choices = { Child: 'Japan', Root: 'Child' }
+  const groups = appProxyGroupsForView(
+    live,
+    [configured],
+    nodes,
+    {},
+    choices,
+    false,
+  )
+  expect(groups.map((group) => group.displayName)).toEqual(['Root', 'Child'])
+  expect(groups[1].now).toBe('Japan')
+  const projected = withAppProxyGroups(live, groups, choices)!
+  const resolved = resolveMember(projected, groups[0].members[0])
+  expect(resolved.kind).toBe('group')
+  if (resolved.kind === 'group') {
+    expect(resolved.group.name).toBe(privateName('Child'))
+    expect(resolved.group.now).toBe('Japan')
+  }
+  expect(live.groups[1].name).toBe('Child')
+  expect(live.groups[1].now).toBe('home')
+  expect(live.groups[0].members[0].name).toBe('Child')
 })

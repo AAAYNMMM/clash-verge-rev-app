@@ -120,6 +120,7 @@
     "noApplications": "No applications added",
     "failedNode": "The latest node check timed out. This group will not switch automatically; select another node manually.",
     "selectNode": "Choose route / node",
+    "switchNodes": "تغییر گره",
     "connectionHelp": "Changes apply to new connections. When “Close connections on mode change” is enabled, editing APP rules also reconnects existing traffic. Otherwise close old connections on the Connections page.",
     "deleteConfirm": "Delete “{{name}}”? Its applications will use the next matching group or the normal default exit.",
     "directHelp": "This group connects directly, without using proxy nodes or continuing through the original rules.",
