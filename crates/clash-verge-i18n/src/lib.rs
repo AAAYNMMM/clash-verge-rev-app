@@ -85,3 +85,13 @@ macro_rules! t {
         }
     };
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn compiled_catalog_contains_core_occupancy_message() {
+        let translated = super::translate("core.alreadyRunning");
+        assert!(!translated.is_empty());
+        assert_ne!(translated, "core.alreadyRunning");
+    }
+}
