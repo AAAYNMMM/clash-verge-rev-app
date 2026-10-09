@@ -156,6 +156,7 @@
     "noGroupNodes": "No nodes match this group’s filters. Edit its filters in APP Rules or refresh the subscription.",
     "toggle": "APP routing",
     "overlayHelp": "APP overrides take priority for TUN traffic. Unmatched applications use the selected Rule, Global or Direct default exit.",
+    "homeOverlayBrief": "APP groups take priority; other traffic follows this mode.",
     "defaultExit": "Default exit",
     "nodeViews": "Node selection views",
     "defaultModeHelp": "Unmatched applications use {{mode}}. Matched APP groups retain their own exits."

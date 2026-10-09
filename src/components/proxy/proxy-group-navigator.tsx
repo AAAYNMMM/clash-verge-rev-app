@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 interface ProxyGroupNavigatorProps {
   proxyGroupNames: string[]
+  displayNames?: Record<string, string>
   onGroupLocation: (groupName: string) => void
   enableHoverJump?: boolean
   hoverDelay?: number
@@ -21,6 +22,7 @@ const getGroupDisplayChar = (groupName: string): string => {
 
 export const ProxyGroupNavigator = ({
   proxyGroupNames,
+  displayNames,
   onGroupLocation,
   enableHoverJump = true,
   hoverDelay = DEFAULT_HOVER_DELAY,
@@ -81,9 +83,10 @@ export const ProxyGroupNavigator = ({
       .filter((name) => name && name.trim())
       .map((name) => ({
         name,
-        displayChar: getGroupDisplayChar(name),
+        label: displayNames?.[name] ?? name,
+        displayChar: getGroupDisplayChar(displayNames?.[name] ?? name),
       }))
-  }, [proxyGroupNames])
+  }, [displayNames, proxyGroupNames])
 
   if (processedGroups.length === 0) {
     return null
@@ -114,8 +117,8 @@ export const ProxyGroupNavigator = ({
         minWidth: 'auto',
       }}
     >
-      {processedGroups.map(({ name, displayChar }) => (
-        <Tooltip key={name} title={name} placement="left" arrow>
+      {processedGroups.map(({ name, label, displayChar }) => (
+        <Tooltip key={name} title={label} placement="left" arrow>
           <Button
             size="small"
             variant="text"

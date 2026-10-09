@@ -3,20 +3,17 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, expect, it, vi } from 'vitest'
 
 import type { AppRoutingGroup } from '@/types/app-routing'
-import type { ProxyNodeView } from '@/types/proxy-view'
+import type { ProxyGroupView, ProxyNodeView } from '@/types/proxy-view'
 
 import { AppProxyGroups } from './app-proxy-groups'
 
 const state = vi.hoisted(() => ({
   groups: [] as AppRoutingGroup[],
   nodes: [] as ProxyNodeView[],
-  ruleCopies: [] as Array<{
-    name: string
-    type: string
-    now: string
-    members: Array<{ kind: 'node'; name: string; recordId: string }>
-  }>,
+  privateCopies: [] as ProxyGroupView[],
+  selected: [] as string[],
 }))
+
 vi.mock('react-router', () => ({ useNavigate: () => vi.fn() }))
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -29,25 +26,61 @@ vi.mock('@/hooks/use-verge', () => ({
       enable_app_routing: true,
       enable_system_proxy: false,
     },
+    patchVerge: vi.fn(),
   }),
 }))
 vi.mock('@/providers/app-data-context', () => ({
   useProxiesData: () => ({
     proxyView: {
+      schemaVersion: 1,
+      orderSource: 'runtime',
+      providerState: 'ready',
+      global: null,
+      direct: 'DIRECT',
       groups: [
-        { name: 'Upstream selector' },
-        { name: 'Automatic testing' },
-        { name: 'Fallback' },
-        ...state.ruleCopies,
+        { name: 'Default TUN selector', type: 'Selector' },
+        ...state.privateCopies,
       ],
       records: Object.fromEntries(
         state.nodes.map((node) => [node.recordId, node]),
       ),
+      standalone: [],
+      providers: [],
     },
     isProxyViewPending: false,
     isProxyViewError: false,
   }),
   useAppRefreshers: () => ({ refreshProxy: vi.fn() }),
+}))
+vi.mock('@/components/base', () => ({
+  BaseLoading: () => createElement('p', null, 'Loading'),
+}))
+vi.mock('@/components/proxy/proxy-groups', () => ({
+  ProxyGroups: ({
+    mode,
+    appGroups,
+  }: {
+    mode: string
+    appGroups: ProxyGroupView[]
+  }) =>
+    createElement(
+      'section',
+      { 'data-mode': mode },
+      ...appGroups.map((group) =>
+        createElement(
+          'div',
+          {
+            key: group.name,
+            'data-name': group.displayName,
+            'data-now': group.now,
+            'data-count': group.members.length,
+          },
+          ...group.members.map((member) =>
+            createElement('span', { key: member.name }, member.name),
+          ),
+        ),
+      ),
+    ),
 }))
 vi.mock('@/services/cmds', () => ({
   matchAppNodes: vi.fn(),
@@ -57,14 +90,34 @@ vi.mock('@/services/notice-service', () => ({ showNotice: { error: vi.fn() } }))
 vi.mock('@/services/mutate', () => ({ mutate: vi.fn() }))
 vi.mock('@/services/query-client', () => ({
   setCacheData: vi.fn(),
-  useQuery: ({ enabled }: { enabled: boolean }) => ({
-    data: enabled ? ['home-1', 'home-2'] : undefined,
+  useQuery: () => ({
+    data: { ai: ['home-1', 'home-2'] },
     isPending: false,
   }),
 }))
 
+const privateGroup = (name: string): ProxyGroupView => ({
+  name:
+    '__CV_APP_RULE_' +
+    Array.from(new TextEncoder().encode(name))
+      .map((byte) => byte.toString(16).padStart(2, '0'))
+      .join(''),
+  type: 'Selector',
+  alive: true,
+  now: 'Japan normal',
+  hidden: true,
+  udp: true,
+  xudp: false,
+  tfo: false,
+  mptcp: false,
+  smux: false,
+  history: [],
+  members: [{ kind: 'node', name: 'Japan normal', recordId: 'jp' }],
+})
+
 beforeEach(() => {
-  state.ruleCopies = []
+  state.selected = []
+  state.privateCopies = []
   state.groups = [
     {
       id: 'ai',
@@ -77,7 +130,7 @@ beforeEach(() => {
     {
       id: 'browser',
       name: 'My browsers',
-      apps: [],
+      apps: [{ kind: 'name', value: 'chrome.exe' }],
       enabled: true,
       node_patterns: [],
       target: { kind: 'rule' },
@@ -98,56 +151,35 @@ beforeEach(() => {
   }))
 })
 
-it('renders only user APP groups, matching nodes and the saved selection', () => {
+it('renders a fixed-node APP group in the same proxy-group list as copied rule groups', () => {
+  state.privateCopies = [privateGroup('PROXY')]
   const html = renderToStaticMarkup(createElement(AppProxyGroups))
-  for (const value of ['My AI apps', 'My browsers', 'home-1', 'home-2'])
-    expect(html).toContain(value)
-  for (const value of [
-    'Upstream selector',
-    'Automatic testing',
-    'Fallback',
-    'office-1',
-  ])
-    expect(html).not.toContain(value)
-  expect(html).toContain('overflow-y:auto')
-  expect(html.match(/role="radio"/g)).toHaveLength(2)
-  expect(html.match(/aria-checked="true"/g)).toHaveLength(1)
+  expect(html).toContain('data-mode="app"')
+  expect(html).toContain('data-name="My AI apps"')
+  expect(html).toContain('data-name="PROXY"')
+  expect(html).toContain('data-now="home-2"')
+  expect(html).toContain('home-1')
+  expect(html).toContain('home-2')
+  expect(html).not.toContain('office-1')
+  expect(html).not.toContain('Default TUN selector')
 })
 
-it('does not render private selectors for an inactive rule group', () => {
-  state.groups = state.groups.filter((group) => group.target.kind === 'rule')
+it('hides the copied GLOBAL group while preserving all other APP rule groups', () => {
+  state.privateCopies = [privateGroup('GLOBAL'), privateGroup('Auto Select')]
   const html = renderToStaticMarkup(createElement(AppProxyGroups))
-  expect(html).toContain('My browsers')
-  expect(html).toContain('rules.appRouting.ruleGroupSummary')
-  expect(html).not.toContain('role="radio"')
+  expect(html).toContain('data-name="Auto Select"')
+  expect(html).not.toContain('data-name="GLOBAL"')
 })
 
-it('shows private APP Rule selectors without displaying the default TUN groups', () => {
-  state.groups = state.groups.filter((group) => group.target.kind === 'rule')
-  state.groups[0].apps = [{ kind: 'name', value: 'chrome.exe' }]
-  state.ruleCopies = [
-    {
-      name: '__CV_APP_RULE_50524f5859',
-      type: 'Selector',
-      now: 'Japan normal',
-      members: [
-        { kind: 'node', name: 'Japan normal', recordId: 'japan' },
-        { kind: 'node', name: 'Residential', recordId: 'residential' },
-      ],
-    },
-  ]
-  const html = renderToStaticMarkup(createElement(AppProxyGroups))
-  expect(html).toContain('rules.appRouting.independentRuleGroups')
-  expect(html).toContain('PROXY')
-  expect(html).toContain('Japan normal')
-  expect(html).toContain('aria-label="PROXY"')
-  expect(html).not.toContain('Upstream selector')
-})
-
-it('shows setup guidance rather than subscription groups when no APP groups exist', () => {
+it('shows the management guidance when no active APP groups are configured', () => {
   state.groups = []
   const html = renderToStaticMarkup(createElement(AppProxyGroups))
   expect(html).toContain('rules.appRouting.emptyGroupsPage')
-  expect(html).not.toContain('Upstream selector')
-  expect(html).not.toContain('home-1')
+  expect(html).not.toContain('data-mode="app"')
+})
+
+it('does not display disabled fixed-node groups in the live proxy view', () => {
+  state.groups[0].enabled = false
+  const html = renderToStaticMarkup(createElement(AppProxyGroups))
+  expect(html).not.toContain('data-name="My AI apps"')
 })

@@ -642,6 +642,7 @@ export interface TranslationResources {
         groupName: string
         groupsPageHelp: string
         groupsPageTitle: string
+        homeOverlayBrief: string
         inactive: string
         independentRuleGroups: string
         independentRuleHelp: string

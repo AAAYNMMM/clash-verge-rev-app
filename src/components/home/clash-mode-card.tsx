@@ -9,7 +9,6 @@ import { type ReactNode, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { BaseConfig } from 'tauri-plugin-mihomo-api'
 
-import { AppRoutingToggle } from '@/components/app-rules/app-routing-toggle'
 import { useClashMode, useRuntimeConfig } from '@/hooks/use-clash'
 import { useVerge } from '@/hooks/use-verge'
 import {
@@ -84,11 +83,7 @@ export const ClashModeCard = () => {
   const currentMode = optimisticMode ?? resolvedMode
 
   const modeDescription = currentMode
-    ? appActive
-      ? t('rules.appRouting.defaultModeHelp', {
-          mode: t(MODE_META[currentMode].label),
-        })
-      : t(MODE_META[currentMode].description)
+    ? t(MODE_META[currentMode].description)
     : isCoreDataPending || isRuntimeConfigPending || isBackendModePending
       ? '\u00A0'
       : t('home.components.clashMode.errors.communication')
@@ -124,8 +119,11 @@ export const ClashModeCard = () => {
     '&:disabled': { opacity: 0.45 },
     flex: 1,
     minWidth: 0,
-    px: 1,
-    py: 1.2,
+    maxWidth: 96,
+    height: 32,
+    px: 0.75,
+    py: 0.5,
+    '& .MuiSvgIcon-root': { fontSize: 16 },
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -162,7 +160,9 @@ export const ClashModeCard = () => {
     width: '95%',
     textAlign: 'center',
     color: 'text.secondary',
-    p: 0.8,
+    px: 0.75,
+    py: 0.25,
+    boxSizing: 'border-box',
     borderRadius: 1,
     borderColor: 'primary.main',
     borderWidth: 1,
@@ -170,20 +170,25 @@ export const ClashModeCard = () => {
     backgroundColor: 'background.paper',
     wordBreak: 'break-word',
     hyphens: 'auto',
+    height: 32,
+    minHeight: 32,
+    maxHeight: 32,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    lineHeight: '13px',
   }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-      <Box sx={{ alignSelf: 'flex-start', mt: 1 }}>
-        <AppRoutingToggle />
-      </Box>
       <Stack
         direction="row"
-        spacing={1}
+        spacing={0.75}
         sx={{
           display: 'flex',
           justifyContent: 'center',
-          py: 1,
+          py: 0.5,
           position: 'relative',
           zIndex: 2,
         }}
@@ -204,6 +209,7 @@ export const ClashModeCard = () => {
               variant="body2"
               sx={{
                 textTransform: 'capitalize',
+                fontSize: 13,
                 fontWeight: mode === currentMode ? 600 : 400,
               }}
             >
@@ -216,20 +222,53 @@ export const ClashModeCard = () => {
       <Box
         sx={{
           width: '100%',
-          my: 1,
+          my: 0.75,
           position: 'relative',
           display: 'flex',
           justifyContent: 'center',
           overflow: 'visible',
         }}
       >
-        <Typography variant="caption" component="div" sx={descriptionStyles}>
-          {modeDescription}
-          {appActive && (
-            <Box sx={{ mt: 0.5 }}>{t('rules.appRouting.overlayHelp')}</Box>
-          )}
+        <Typography
+          variant="caption"
+          component="div"
+          title={modeDescription}
+          sx={descriptionStyles}
+        >
+          <Box
+            component="span"
+            sx={{
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {modeDescription}
+          </Box>
         </Typography>
       </Box>
+      {appActive && (
+        <Typography
+          variant="caption"
+          noWrap
+          title={t('rules.appRouting.homeOverlayBrief')}
+          sx={{
+            display: 'block',
+            textAlign: 'center',
+            alignSelf: 'center',
+            width: '95%',
+            maxHeight: 24,
+            minHeight: 20,
+            px: 0.75,
+            color: 'text.secondary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {t('rules.appRouting.homeOverlayBrief')}
+        </Typography>
+      )}
     </Box>
   )
 }

@@ -1,5 +1,5 @@
 import { LanOutlined, LanRounded, WarningRounded } from '@mui/icons-material'
-import { Box, Button, ButtonGroup, Tabs, Tab } from '@mui/material'
+import { Box, Button, ButtonGroup } from '@mui/material'
 import { useLockFn } from 'ahooks'
 import { useCallback, useEffect, useReducer, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -70,6 +70,11 @@ const ProxyPage = () => {
 
   const onChangeMode = useLockFn(async (mode: Mode) => {
     if (!verge) return
+    if (nodeView === 'default' && mode === curMode) return
+    if (mode === curMode) {
+      setNodeView('default')
+      return
+    }
     try {
       // patchClashMode 在后端 PATCH 失败时会 reject，需提示用户而非静默失败
       await mutate(() => patchClashMode(mode), {
@@ -171,24 +176,35 @@ const ProxyPage = () => {
               sx={{ p: 0.25 }}
             />
           </Box>
-        ) : isAppView ? (
-          t('rules.appRouting.groupsPageTitle')
         ) : (
           t('proxies.page.title.default')
         )
       }
       header={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {!isAppView && <ProviderButton />}
-          <AppRoutingToggle onEnabled={() => setNodeView('app')} />
-
+          <ProviderButton />
           <ButtonGroup size="small">
+            <AppRoutingToggle
+              grouped
+              selected={isAppView}
+              onEnabled={() => {
+                setNodeView('app')
+                if (isChainMode) void onToggleChainMode()
+              }}
+              onActiveSelect={() => {
+                setNodeView('app')
+                if (isChainMode) void onToggleChainMode()
+              }}
+              onDisabled={() => setNodeView('default')}
+            />
             {MODES.map((mode) => (
               <Button
                 key={mode}
                 disabled={!verge}
-                aria-pressed={mode === curMode}
-                variant={mode === curMode ? 'contained' : 'outlined'}
+                aria-pressed={!isAppView && mode === curMode}
+                variant={
+                  !isAppView && mode === curMode ? 'contained' : 'outlined'
+                }
                 onClick={() => onChangeMode(mode)}
                 sx={{ textTransform: 'capitalize' }}
               >
@@ -224,16 +240,6 @@ const ProxyPage = () => {
           minHeight: 0,
         }}
       >
-        {appActive && !isChainMode && (
-          <Tabs
-            value={nodeView}
-            onChange={(_, value: 'app' | 'default') => setNodeView(value)}
-            aria-label={t('rules.appRouting.nodeViews')}
-          >
-            <Tab value="app" label={t('rules.appRouting.groupsPageTitle')} />
-            <Tab value="default" label={t('rules.appRouting.defaultExit')} />
-          </Tabs>
-        )}
         <Box sx={{ flex: 1, minHeight: 0 }}>
           {isAppView ? (
             <AppProxyGroups />

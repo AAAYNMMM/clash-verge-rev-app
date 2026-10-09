@@ -20,6 +20,7 @@ import { useIconCache } from '@/hooks/use-icon-cache'
 import { useVerge } from '@/hooks/use-verge'
 import { useThemeMode } from '@/services/states'
 import type { ResolvedProxyMember } from '@/types/proxy-view'
+import { displayAppProxyName } from '@/utils/app-proxy-view'
 
 import { ProxyGroupHeaderBlock } from './proxy-group-header-block'
 import { ProxyGroupTools } from './proxy-group-tools'
@@ -120,7 +121,11 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
         )}
         <ListItemText
           sx={{ flex: '0 1 auto', minWidth: 0 }}
-          primary={<StyledPrimary>{group.name}</StyledPrimary>}
+          primary={
+            <StyledPrimary>
+              {group.displayName ?? displayAppProxyName(group.name)}
+            </StyledPrimary>
+          }
           secondary={
             <Box
               sx={{
@@ -141,7 +146,7 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
               >
                 <StyledTypeBox>{group.type}</StyledTypeBox>
                 <StyledSubtitle sx={{ color: 'text.secondary' }}>
-                  {group.now}
+                  {group.now && displayAppProxyName(group.now)}
                 </StyledSubtitle>
               </Box>
             </Box>

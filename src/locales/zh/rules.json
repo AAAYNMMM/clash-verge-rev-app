@@ -156,6 +156,7 @@
     "noGroupNodes": "没有符合此分组筛选条件的节点，请在「APP 规则」修改筛选条件，或刷新订阅。",
     "toggle": "APP 分流",
     "overlayHelp": "TUN 流量先匹配 APP 分组，未命中的应用再走所选的规则、全局或直连默认出口。",
+    "homeOverlayBrief": "APP 分组优先；其他流量按当前代理模式处理。",
     "defaultExit": "默认出口",
     "nodeViews": "节点选择视图",
     "defaultModeHelp": "未命中的应用使用{{mode}}模式；已命中 APP 分组的应用保持各自出口。"

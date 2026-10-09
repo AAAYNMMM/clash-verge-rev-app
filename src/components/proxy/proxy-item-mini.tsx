@@ -10,6 +10,7 @@ import {
   type ProxyGroupView,
   type ResolvedProxyMember,
 } from '@/types/proxy-view'
+import { displayAppProxyName } from '@/utils/app-proxy-view'
 
 interface Props {
   group: ProxyGroupView
@@ -94,7 +95,7 @@ export const ProxyItemMini = (props: Props) => {
             whiteSpace: 'nowrap',
           }}
         >
-          {name}
+          {displayAppProxyName(name)}
         </Typography>
 
         {showType && (
@@ -120,7 +121,7 @@ export const ProxyItemMini = (props: Props) => {
                   marginRight: '8px',
                 }}
               >
-                {now}
+                {displayAppProxyName(now)}
               </Typography>
             )}
             <TypeBox color="text.secondary" component="span">

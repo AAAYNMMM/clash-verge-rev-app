@@ -118,13 +118,17 @@ it.each(['rule', 'global', 'direct'])(
   },
 )
 
-it('shows APP and Global as independently enabled and keeps a default-exit view', () => {
+it('puts APP beside Rule, Global and Direct without the redundant default-exit tabs', () => {
   const html = renderToStaticMarkup(createElement(ProxyPage))
   expect(html).toContain(
     'aria-label="rules.appRouting.toggle" aria-pressed="true"',
   )
-  expect(html).toContain('rules.appRouting.defaultExit')
+  expect(html).not.toContain('rules.appRouting.defaultExit')
+  expect(html).not.toContain('rules.appRouting.groupsPageTitle')
+  expect(html).toContain('role="group"')
+  expect(html).toContain('proxies.page.modes.rule')
   expect(html).toContain('proxies.page.modes.global')
+  expect(html).toContain('proxies.page.modes.direct')
   expect(html).toContain('data-view="app-groups"')
 })
 

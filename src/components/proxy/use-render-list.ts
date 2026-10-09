@@ -124,6 +124,7 @@ export const useRenderList = (
   mode: string,
   isChainMode?: boolean,
   selectedGroup?: string | null,
+  appGroups?: ProxyGroupView[],
 ) => {
   const { proxyView } = useProxiesData()
   const { refreshProxy } = useAppRefreshers()
@@ -212,12 +213,14 @@ export const useRenderList = (
     if (!proxyView) return []
     if (isChainMode)
       return selectedGroup ? [selectedGroup] : [CHAIN_DELAY_GROUP]
-    return mode === 'rule' || mode === 'script'
-      ? proxyView.groups.map(({ name }) => name)
-      : proxyView.global
-        ? [proxyView.global.name]
-        : []
-  }, [isChainMode, mode, proxyView, selectedGroup])
+    return mode === 'app'
+      ? (appGroups ?? []).map(({ name }) => name)
+      : mode === 'rule' || mode === 'script'
+        ? proxyView.groups.map(({ name }) => name)
+        : proxyView.global
+          ? [proxyView.global.name]
+          : []
+  }, [appGroups, isChainMode, mode, proxyView, selectedGroup])
   const groupDelays = useGroupsDelays(renderedGroupNames)
 
   const groupCacheRef = useRef<Map<string, GroupCache>>(new Map())
@@ -258,12 +261,15 @@ export const useRenderList = (
       }))
     }
 
-    const useRule = mode === 'rule' || mode === 'script'
-    const renderGroups = useRule
-      ? proxyView.groups
-      : proxyView.global === null
-        ? []
-        : [proxyView.global]
+    const useRule = mode === 'rule' || mode === 'script' || mode === 'app'
+    const renderGroups =
+      mode === 'app'
+        ? (appGroups ?? [])
+        : useRule
+          ? proxyView.groups
+          : proxyView.global === null
+            ? []
+            : [proxyView.global]
     const cache = groupCacheRef.current
     let anyChanged = false
 
@@ -357,6 +363,7 @@ export const useRenderList = (
     prevListRef.current = filtered
     return filtered
   }, [
+    appGroups,
     chainOccurrences,
     col,
     groupDelays,

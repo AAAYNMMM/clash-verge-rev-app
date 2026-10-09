@@ -481,6 +481,7 @@ export const translationKeys = [
   'rules.appRouting.noGroupNodes',
   'rules.appRouting.toggle',
   'rules.appRouting.overlayHelp',
+  'rules.appRouting.homeOverlayBrief',
   'rules.appRouting.defaultExit',
   'rules.appRouting.nodeViews',
   'rules.appRouting.defaultModeHelp',

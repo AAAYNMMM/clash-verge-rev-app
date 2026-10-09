@@ -25,6 +25,7 @@ import { useLockFn } from 'ahooks'
 import { Suspense, lazy, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
+import { AppRoutingToggle } from '@/components/app-rules/app-routing-toggle'
 import { BasePage } from '@/components/base'
 import { ClashModeCard } from '@/components/home/clash-mode-card'
 import { CurrentProxyCard } from '@/components/home/current-proxy-card'
@@ -239,8 +240,13 @@ const HomePage = () => {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   // 卡片显示状态
-  const homeCards =
-    (verge?.home_cards as HomeCardsSettings | undefined) ?? DEFAULT_HOME_CARDS
+  const homeCards = useMemo(
+    () => ({
+      ...DEFAULT_HOME_CARDS,
+      ...(verge?.home_cards as HomeCardsSettings | undefined),
+    }),
+    [verge?.home_cards],
+  )
 
   // 文档链接函数
   const toGithubDoc = useLockFn(() =>
@@ -394,7 +400,7 @@ const ClashModeEnhancedCard = () => {
       title={t('home.page.cards.proxyMode')}
       icon={<RouterOutlined />}
       iconColor="info"
-      action={null}
+      action={<AppRoutingToggle />}
     >
       <ClashModeCard />
     </EnhancedCard>

@@ -25,6 +25,7 @@ interface DelayHistory {
 
 export interface ProxyGroupView extends ProxyCapabilities {
   name: string
+  displayName?: string
   type: string
   alive: boolean
   now?: string

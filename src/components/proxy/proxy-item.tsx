@@ -20,6 +20,7 @@ import {
   type ProxyGroupView,
   type ResolvedProxyMember,
 } from '@/types/proxy-view'
+import { displayAppProxyName } from '@/utils/app-proxy-view'
 
 interface Props {
   group: ProxyGroupView
@@ -109,7 +110,7 @@ export const ProxyItem = (props: Props) => {
                   color: 'text.primary',
                 }}
               >
-                {name}
+                {displayAppProxyName(name)}
                 {showType && now && ` - ${now}`}
               </Box>
               {showType && <TypeBox>{type}</TypeBox>}
