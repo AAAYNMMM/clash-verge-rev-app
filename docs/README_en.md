@@ -2,7 +2,8 @@
 
 Independent fork of [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev), extending [Mihomo](https://github.com/MetaCubeX/mihomo) with **TUN-scoped, process-based outbound overrides**. Selected applications use either pinned exits or an independent copy of the active profile’s domain rules and proxy selectors. Unmatched traffic retains the TUN Rule, Global, or Direct behavior. Not affiliated with the upstream release project.
 
-**Current stable release: `v2.5.14` · Windows x64.**
+**Development version: `v2.5.8`, aligned with the upstream stable release.**
+The published installer remains `v2.5.14`; the upstream sync and current UI changes are not published yet.
 [Release](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.14) · [Routing contract](APP_ROUTING.md) · [中文](../README.md) · [License](../LICENSE)
 
 ## Routing architecture

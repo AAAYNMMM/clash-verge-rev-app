@@ -23,9 +23,12 @@ import { useProfiles } from '@/hooks/use-profiles'
 import { useProxySelection } from '@/hooks/use-proxy-selection'
 import { useVerge } from '@/hooks/use-verge'
 import { useProxiesData, useSystemData } from '@/providers/app-data-context'
+import { syncTrayProxySelection } from '@/services/cmds'
 import delayManager from '@/services/delay'
+import { mutate } from '@/services/mutate'
 import {
   isInteractableMember,
+  isSelectedProxyMember,
   resolveMember,
   type ProxyGroupView,
   type ResolvedProxyMember,
@@ -138,6 +141,12 @@ function useProxyRenderState(
         console.error(`[ProxyGroups] 延迟测试出错，组: ${groupName}`, error)
       } finally {
         onProxies()
+        mutate(() => syncTrayProxySelection(), {
+          id: 'sync-tray-selection',
+          errorNotice: false,
+        }).catch((error) => {
+          console.error('[ProxyGroups] Failed to sync tray latency:', error)
+        })
       }
     }),
   )
@@ -318,14 +327,18 @@ function ChainProxyGroups(props: {
 
   const handleLocation = useStableCallback((group: ProxyGroupView) => {
     if (!group) return
-    const { name, now } = group
+    const { name } = group
 
     const index = renderList.findIndex(
       (item) =>
         item.group?.name === name &&
-        ((item.type === 2 && item.member?.member.ref.name === now) ||
+        ((item.type === 2 &&
+          item.member &&
+          isSelectedProxyMember(group, item.member.member)) ||
           (item.type === 4 &&
-            item.memberCol?.some(({ member }) => member.ref.name === now))),
+            item.memberCol?.some(({ member }) =>
+              isSelectedProxyMember(group, member),
+            ))),
     )
 
     if (index >= 0) {
@@ -482,14 +495,18 @@ function NormalProxyGroups(
 
   const handleLocation = useStableCallback((group: ProxyGroupView) => {
     if (!group) return
-    const { name, now } = group
+    const { name } = group
 
     const index = renderList.findIndex(
       (e) =>
         e.group?.name === name &&
-        ((e.type === 2 && e.member?.member.ref.name === now) ||
+        ((e.type === 2 &&
+          e.member &&
+          isSelectedProxyMember(group, e.member.member)) ||
           (e.type === 4 &&
-            e.memberCol?.some(({ member }) => member.ref.name === now))),
+            e.memberCol?.some(({ member }) =>
+              isSelectedProxyMember(group, member),
+            ))),
     )
 
     if (index >= 0) {

@@ -26,6 +26,7 @@ interface DelayHistory {
 export interface ProxyGroupView extends ProxyCapabilities {
   name: string
   displayName?: string
+  selectedRecordId?: string | null
   type: string
   alive: boolean
   now?: string
@@ -34,6 +35,7 @@ export interface ProxyGroupView extends ProxyCapabilities {
   icon?: string
   testUrl?: string
   history: DelayHistory[]
+  extra?: Record<string, { alive: boolean; history: DelayHistory[] }>
   members: ProxyMemberRef[]
 }
 
@@ -43,6 +45,7 @@ export interface ProxyNodeView extends ProxyCapabilities {
   type: string
   alive: boolean
   history: DelayHistory[]
+  extra?: Record<string, { alive: boolean; history: DelayHistory[] }>
   id?: string
   hidden?: boolean
   icon?: string
@@ -152,6 +155,14 @@ export function resolveMember(
 export const isInteractableMember = (
   member: ResolvedProxyMember,
 ): member is InteractableProxyMember => member.kind !== 'unresolved'
+
+export const isSelectedProxyMember = (
+  group: ProxyGroupView,
+  member: ResolvedProxyMember,
+): boolean =>
+  group.selectedRecordId !== undefined
+    ? member.kind === 'node' && member.node.recordId === group.selectedRecordId
+    : member.kind !== 'unresolved' && group.now === member.ref.name
 
 export const memberDetails = (member: ResolvedProxyMember) =>
   member.kind === 'node'

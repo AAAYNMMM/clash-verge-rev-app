@@ -2,7 +2,8 @@
 
 基于 [Clash Verge Rev](https://github.com/clash-verge-rev/clash-verge-rev) 与 [Mihomo](https://github.com/MetaCubeX/mihomo) 的独立分支。核心扩展是 **TUN 入站的进程级策略覆盖层**：指定应用可使用固定节点或独立复制的域名规则链与代理组，其他流量仍遵循 TUN 原有规则、全局或直连模式。该分支不是上游官方发行版。
 
-**当前正式版本：`v2.5.14` · Windows x64。**
+**当前开发版本：`v2.5.8` · 已合并上游同版本正式版。**
+已发布安装包仍为 `v2.5.14`；本次版本对齐与界面调整尚未发布。
 [Release](https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v2.5.14) · [路由机制](docs/APP_ROUTING.md) · [English](docs/README_en.md) · [License](LICENSE)
 
 ## 网络与路由模型

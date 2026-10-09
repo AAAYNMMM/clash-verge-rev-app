@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { AppRoutingGroup } from '@/types/app-routing'
+import { isSelectedProxyMember, resolveMember } from '@/types/proxy-view'
 import type {
   ProxyGroupView,
   ProxyNodeView,
@@ -107,4 +108,42 @@ describe('APP proxy-group view isolation', () => {
     expect(originalAppRuleGroupName('__CV_APP_RULE_ff')).toBeNull()
     expect(appProxyGroupsForView(undefined, [], nodes, {})).toEqual([])
   })
+})
+
+it('keeps same-name fixed-node selections bound to the saved provider', () => {
+  const twins: ProxyNodeView[] = ['one', 'two'].map((provider) => ({
+    ...nodes[0],
+    recordId: provider,
+    name: 'Same',
+    source: { kind: 'provider', providerName: provider, proxyName: 'Same' },
+  }))
+  const live = {
+    ...view,
+    groups: [],
+    records: Object.fromEntries(twins.map((node) => [node.recordId, node])),
+  }
+  const group: AppRoutingGroup = {
+    id: 'fixed',
+    name: 'Fixed',
+    enabled: true,
+    apps: [{ kind: 'name', value: 'app.exe' }],
+    node_patterns: ['Same'],
+    target: { kind: 'node', name: 'Same', provider: 'two' },
+  }
+  const visible = appProxyGroupsForView(live, [group], twins, {
+    fixed: ['Same'],
+  })[0]
+  expect(visible.selectedRecordId).toBe('two')
+  expect(
+    visible.members.map((member) =>
+      isSelectedProxyMember(visible, resolveMember(live, member)),
+    ),
+  ).toEqual([false, true])
+  const missing = appProxyGroupsForView(live, [group], [twins[0]], {
+    fixed: ['Same'],
+  })[0]
+  expect(missing.selectedRecordId).toBeNull()
+  expect(
+    isSelectedProxyMember(missing, resolveMember(live, missing.members[0])),
+  ).toBe(false)
 })

@@ -57,6 +57,7 @@ export const appProxyGroupsForView = (
       {
         name: `${APP_GROUP_PREFIX}${group.id}`,
         displayName: group.name,
+        selectedRecordId: selected?.recordId ?? null,
         type: 'Selector',
         alive: true,
         now: selectedName,

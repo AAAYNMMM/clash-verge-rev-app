@@ -19,7 +19,10 @@ import { useTranslation } from 'react-i18next'
 import { useIconCache } from '@/hooks/use-icon-cache'
 import { useVerge } from '@/hooks/use-verge'
 import { useThemeMode } from '@/services/states'
-import type { ResolvedProxyMember } from '@/types/proxy-view'
+import {
+  isSelectedProxyMember,
+  type ResolvedProxyMember,
+} from '@/types/proxy-view'
 import { displayAppProxyName } from '@/utils/app-proxy-view'
 
 import { ProxyGroupHeaderBlock } from './proxy-group-header-block'
@@ -81,7 +84,7 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
         key={`${item.key}-${occurrence.memberIndex}`}
         group={group}
         member={occurrence.member}
-        selected={group.now === occurrence.member.ref.name}
+        selected={isSelectedProxyMember(group, occurrence.member)}
         showType={showType}
         onClick={(nextMember) => onChangeProxy(group, nextMember)}
       />
@@ -267,7 +270,7 @@ export const ProxyRender = memo(function ProxyRender(props: RenderProps) {
       <ProxyItem
         group={group}
         member={member!.member}
-        selected={group.now === member?.member.ref.name}
+        selected={isSelectedProxyMember(group, member!.member)}
         showType={headState?.showType}
         sx={{ py: 0, pl: 2 }}
         onClick={(nextMember) => onChangeProxy(group, nextMember)}
