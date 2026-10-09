@@ -614,10 +614,17 @@ export async function getRunningApps() {
 
 export async function selectAppGroupNode(
   groupId: string,
-  nodeRecordId: string,
+  target: import('@/types/app-routing').AppTarget,
 ) {
   return invoke<import('@/types/app-routing').AppRoutingConfig>(
     'select_app_group_node',
-    { groupId, nodeRecordId },
+    { groupId, target },
+  )
+}
+
+export async function selectAppRuleNode(groupName: string, member: string) {
+  return invoke<import('@/types/app-routing').AppRoutingConfig>(
+    'select_app_rule_node',
+    { groupName, member },
   )
 }

@@ -93,6 +93,7 @@ impl CoreManager {
             return;
         }
         crate::config::profiles::restore_selected_nodes().await;
+        crate::feat::restore_app_selections().await;
     }
 }
 

@@ -41,7 +41,7 @@ pub enum AppMatchKind {
     Path,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum AppTarget {
     Rule,
@@ -101,8 +101,15 @@ impl AppRoutingConfig {
         if !group.enabled || !matches!(group.target, AppTarget::Node { .. }) {
             bail!("This APP group is disabled or uses Rule mode; edit the group first");
         }
+        if let AppTarget::Node { name, provider } = &target {
+            if name.is_empty() || provider.as_ref().is_some_and(|name| name.is_empty()) {
+                bail!("APP groups require a node name and a valid source");
+            }
+            if !matches_node(&compile_patterns(&group.node_patterns)?, name)? {
+                bail!("The selected node must match this APP group's node filter");
+            }
+        }
         group.target = target;
-        next.validate()?;
         Ok(next)
     }
 

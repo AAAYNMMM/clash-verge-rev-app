@@ -1,18 +1,25 @@
 import { Button, Paper, Stack, Typography } from '@mui/material'
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router'
-import { selectNodeForGroup } from 'tauri-plugin-mihomo-api'
 
 import { BaseLoading } from '@/components/base'
 import { ProxyGroups } from '@/components/proxy/proxy-groups'
 import { useVerge } from '@/hooks/use-verge'
 import { useAppRefreshers, useProxiesData } from '@/providers/app-data-context'
-import { matchAppNodes, selectAppGroupNode } from '@/services/cmds'
+import {
+  matchAppNodes,
+  selectAppGroupNode,
+  selectAppRuleNode,
+} from '@/services/cmds'
 import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
 import { setCacheData, useQuery } from '@/services/query-client'
-import type { ProxyGroupView, ResolvedProxyMember } from '@/types/proxy-view'
+import type {
+  ProxyGroupView,
+  ProxyViewV1,
+  ResolvedProxyMember,
+} from '@/types/proxy-view'
 import {
   appProxyGroupsForView,
   originalAppRuleGroupName,
@@ -23,7 +30,7 @@ import { appRoutingActive } from '@/utils/proxy-mode'
 export const AppProxyGroups = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { verge, patchVerge } = useVerge()
+  const { verge } = useVerge()
   const { proxyView, isProxyViewPending } = useProxiesData()
   const { refreshProxy } = useAppRefreshers()
   const active = appRoutingActive(verge)
@@ -74,68 +81,98 @@ export const AppProxyGroups = () => {
       ),
     [proxyView, groups, nodes, candidates.data, selections, active],
   )
-  const [pending, setPending] = useState(false)
   const writingRef = useRef(false)
+  const requestsRef = useRef(
+    new Map<
+      string,
+      {
+        group: ProxyGroupView
+        member: ResolvedProxyMember
+        fixedId?: string
+      }
+    >(),
+  )
 
   const select = async (group: ProxyGroupView, member: ResolvedProxyMember) => {
-    if (
-      writingRef.current ||
-      !verge?.app_routing ||
-      member.kind === 'unresolved'
-    )
-      return
-
+    if (!verge?.app_routing || member.kind === 'unresolved') return
     const original = originalAppRuleGroupName(group.name)
     const fixed = !original
       ? groups?.find((item) => '__CV_APP_' + item.id === group.name)
       : undefined
-
-    if (original && group.now === member.ref.name) return
     if (
       !original &&
       (!fixed || fixed.target.kind !== 'node' || member.kind !== 'node')
     )
       return
-    if (
-      fixed &&
-      member.kind === 'node' &&
-      targetKey(fixed.target) === targetKey(nodeTarget(member.node))
-    )
-      return
-
+    if (!writingRef.current) {
+      if (original && group.now === member.ref.name) return
+      if (
+        fixed &&
+        member.kind === 'node' &&
+        targetKey(fixed.target) === targetKey(nodeTarget(member.node))
+      )
+        return
+    }
+    // Keep the latest pending choice per group without discarding choices for other groups.
+    requestsRef.current.set(group.name, { group, member, fixedId: fixed?.id })
+    if (writingRef.current) return
     writingRef.current = true
-    setPending(true)
     try {
-      if (original) {
-        const routing = verge.app_routing
-        await patchVerge({
-          app_routing: {
-            ...routing,
-            rule_selections: {
-              ...routing.rule_selections,
-              [original]: member.ref.name,
+      while (requestsRef.current.size) {
+        const request = requestsRef.current.values().next().value!
+        requestsRef.current.delete(request.group.name)
+        const { group: current, member: chosen, fixedId } = request
+        const rule = originalAppRuleGroupName(current.name)
+        try {
+          const result = await mutate(
+            () =>
+              rule
+                ? selectAppRuleNode(rule, chosen.ref.name)
+                : selectAppGroupNode(
+                    fixedId!,
+                    nodeTarget(
+                      (chosen as Extract<ResolvedProxyMember, { kind: 'node' }>)
+                        .node,
+                    ),
+                  ),
+            {
+              id: 'patch-verge-config',
+              onFulfilled: (routing) => {
+                void setCacheData<IVergeConfig>(['getVergeConfig'], (value) =>
+                  value ? { ...value, app_routing: routing } : value,
+                )
+                if (rule)
+                  void setCacheData<ProxyViewV1>(['getProxyView'], (value) =>
+                    value
+                      ? {
+                          ...value,
+                          groups: value.groups.map((entry) =>
+                            entry.name === current.name
+                              ? {
+                                  ...entry,
+                                  now: chosen.ref.name,
+                                  ...(entry.type === 'Selector'
+                                    ? {}
+                                    : { fixed: chosen.ref.name }),
+                                }
+                              : entry,
+                          ),
+                        }
+                      : value,
+                  )
+              },
+              errorNotice: false,
             },
-          },
-        })
-        if (active) await selectNodeForGroup(group.name, member.ref.name)
-      } else if (fixed && member.kind === 'node') {
-        await mutate(() => selectAppGroupNode(fixed.id, member.node.recordId), {
-          id: 'patch-verge-config',
-          onFulfilled: (routing) => {
-            void setCacheData<IVergeConfig>(['getVergeConfig'], (current) =>
-              current ? { ...current, app_routing: routing } : current,
-            )
-          },
-          revalidate: [['getVergeConfig'], ['getProxyView']],
-          errorNotice: false,
-        })
+          )
+          if (!result.ok) continue
+        } catch (error) {
+          showNotice.error(error)
+          // An ambiguous backend error needs authoritative state, not a successful-looking local selection.
+          void refreshProxy().catch(() => {})
+        }
       }
-      await refreshProxy()
-    } catch (error) {
-      showNotice.error(error)
     } finally {
       writingRef.current = false
-      setPending(false)
     }
   }
 
@@ -166,7 +203,7 @@ export const AppProxyGroups = () => {
       mode="app"
       appGroups={visibleGroups}
       onAppSelect={(group, member) => {
-        if (!pending) void select(group, member)
+        void select(group, member)
       }}
     />
   )

@@ -1,6 +1,9 @@
-use crate::config::app_routing::{AppMatchKind, AppMatcher, AppRoutingConfig, AppTarget};
+use crate::config::app_routing::{
+    AppMatchKind, AppMatcher, AppRoutingConfig, AppTarget, compile_patterns, matches_node,
+};
 use anyhow::{Result, bail};
 use serde_yaml_ng::{Mapping, Value};
+use std::collections::{BTreeMap, BTreeSet};
 
 pub const GROUP_PREFIX: &str = "__CV_APP_";
 
@@ -90,6 +93,164 @@ fn locked_group(config: &Mapping, id: &str, name: &str, provider: &Option<String
         );
     }
     Value::Mapping(group)
+}
+
+// The separator cannot occur in user group IDs; names encode source identity, not display order.
+pub fn app_node_group_name(name: &str, provider: Option<&str>) -> String {
+    let identity = serde_json::json!([provider, name]).to_string();
+    let encoded = identity
+        .as_bytes()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    format!("{GROUP_PREFIX}NODE:{encoded}")
+}
+
+pub fn is_proxy_node_type(kind: &str) -> bool {
+    !matches!(
+        kind.to_ascii_lowercase().as_str(),
+        "direct" | "reject" | "rejectdrop" | "reject-drop" | "pass" | "pass-rule" | "compatible" | "dns" | "rematch"
+    )
+}
+
+fn collect_nodes(values: Option<&Value>, provider: Option<&str>, nodes: &mut BTreeSet<AppTarget>) {
+    for value in values.and_then(Value::as_sequence).into_iter().flatten() {
+        if let Some(name) = value.get("name").and_then(Value::as_str)
+            && value
+                .get("type")
+                .and_then(Value::as_str)
+                .is_some_and(is_proxy_node_type)
+        {
+            nodes.insert(AppTarget::Node {
+                name: name.to_owned(),
+                provider: provider.map(str::to_owned),
+            });
+        }
+    }
+}
+
+fn available_nodes(config: &Mapping, extra: &[AppTarget]) -> BTreeSet<AppTarget> {
+    let mut nodes = BTreeSet::new();
+    collect_nodes(config.get("proxies"), None, &mut nodes);
+    if let Some(providers) = config.get("proxy-providers").and_then(Value::as_mapping) {
+        for (provider, definition) in providers {
+            if let Some(name) = provider.as_str() {
+                collect_nodes(definition.get("payload"), Some(name), &mut nodes);
+            }
+        }
+        nodes.extend(
+            extra
+                .iter()
+                .filter(|target| {
+                    matches!(target,
+                        AppTarget::Node { provider: Some(provider), .. } if providers.contains_key(provider.as_str())
+                    )
+                })
+                .cloned(),
+        );
+    }
+    nodes
+}
+
+fn prepared_fixed_group(
+    config: &Mapping,
+    app: &crate::config::app_routing::AppRoutingGroup,
+    available: &BTreeSet<AppTarget>,
+    leaves: &mut BTreeMap<String, Value>,
+) -> Result<Value> {
+    let filters = compile_patterns(&app.node_patterns)?;
+    let mut targets = BTreeSet::new();
+    // The selected identity always remains addressable even if its provider removes it.
+    targets.insert(app.target.clone());
+    for target in available {
+        if let AppTarget::Node { name, .. } = target
+            && matches_node(&filters, name)?
+        {
+            targets.insert(target.clone());
+        }
+    }
+    let mut members = vec![Value::from("REJECT")];
+    for target in targets {
+        if let AppTarget::Node { name, provider } = target {
+            let alias = app_node_group_name(&name, provider.as_deref());
+            leaves.entry(alias.clone()).or_insert_with(|| {
+                let mut leaf = locked_group(config, "", &name, &provider);
+                leaf["name"] = alias.clone().into();
+                leaf
+            });
+            members.push(alias.into());
+        }
+    }
+    let AppTarget::Node { name, provider } = &app.target else {
+        bail!("Expected fixed-node target")
+    };
+    let mut selector = Mapping::new();
+    selector.insert("name".into(), format!("{GROUP_PREFIX}{}", app.id).into());
+    selector.insert("type".into(), "select".into());
+    selector.insert("hidden".into(), true.into());
+    selector.insert("empty-fallback".into(), "REJECT".into());
+    selector.insert(
+        "default-selected".into(),
+        app_node_group_name(name, provider.as_deref()).into(),
+    );
+    selector.insert("proxies".into(), members.into());
+    Ok(selector.into())
+}
+
+pub async fn apply_live(config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> Result<Mapping> {
+    let mut extra = BTreeSet::new();
+    if enabled
+        && routing
+            .groups
+            .iter()
+            .any(|g| g.enabled && matches!(g.target, AppTarget::Node { .. }))
+        && let Some(providers) = config.get("proxy-providers").and_then(Value::as_mapping)
+    {
+        // Cached files cover startup before a core exists. Live metadata covers provider overrides.
+        for (name, definition) in providers {
+            if let (Some(name), Some(file)) = (name.as_str(), definition.get("path").and_then(Value::as_str))
+                && let Ok(home) = crate::utils::dirs::app_home_dir()
+            {
+                let Ok(path) = tokio::fs::canonicalize(home.join(file)).await else {
+                    continue;
+                };
+                let Ok(home) = tokio::fs::canonicalize(home).await else {
+                    continue;
+                };
+                if !path.starts_with(home) {
+                    continue;
+                }
+                if let Ok(content) = tokio::fs::read_to_string(path).await
+                    && let Ok(value) = serde_yaml_ng::from_str::<Value>(&content)
+                {
+                    collect_nodes(value.get("proxies"), Some(name), &mut extra);
+                }
+            }
+        }
+        if !matches!(
+            *crate::core::CoreManager::global().get_running_mode(),
+            crate::core::manager::RunningMode::NotRunning
+        ) && let Ok(Ok(snapshot)) = tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            crate::core::handle::Handle::mihomo().get_proxy_providers(),
+        )
+        .await
+        {
+            for (provider, value) in snapshot.providers {
+                if providers.contains_key(provider.as_str()) {
+                    for node in value.proxies {
+                        if is_proxy_node_type(node.proxy_type.as_str()) {
+                            extra.insert(AppTarget::Node {
+                                name: node.name,
+                                provider: Some(provider.clone()),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+    apply_with_candidates(config, routing, enabled, &extra.into_iter().collect::<Vec<_>>())
 }
 
 // These exceptions protect local IPC/LAN destinations before any APP or default exit.
@@ -182,10 +343,10 @@ fn duplicate_groups(
         copy.insert("empty-fallback".into(), "REJECT".into());
         if let Some(members) = copy.get_mut("proxies").and_then(Value::as_sequence_mut) {
             for member in members {
-                if let Some(name) = member.as_str() {
-                    if let Some(alias) = aliases.get(name) {
-                        *member = alias.clone().into();
-                    }
+                if let Some(name) = member.as_str()
+                    && let Some(alias) = aliases.get(name)
+                {
+                    *member = alias.clone().into();
                 }
             }
         }
@@ -278,7 +439,17 @@ fn duplicate_rule_chain(
     config.insert("sub-rules".into(), Value::Mapping(cloned_sub_rules));
     Ok(())
 }
-pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> Result<Mapping> {
+#[cfg(test)]
+pub fn apply(config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> Result<Mapping> {
+    apply_with_candidates(config, routing, enabled, &[])
+}
+
+pub fn apply_with_candidates(
+    mut config: Mapping,
+    routing: &AppRoutingConfig,
+    enabled: bool,
+    extra: &[AppTarget],
+) -> Result<Mapping> {
     if config.get("mode").and_then(Value::as_str) == Some("app") {
         config.insert("mode".into(), "rule".into());
     }
@@ -319,6 +490,8 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> 
 
     preserve_global_members(&config, &mut groups);
     let original_groups = groups.clone();
+    let available = available_nodes(&config, extra);
+    let mut leaves = BTreeMap::new();
     let mut rules: Vec<Value> = LOCAL_RULES.iter().map(|rule| Value::from(*rule)).collect();
     let mut claimed = Vec::new();
     let mut rule_apps = Vec::new();
@@ -343,7 +516,8 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> 
             }
             AppTarget::Direct => rules.push(format!("{condition},DIRECT").into()),
             AppTarget::Node { name, provider } => {
-                groups.push(locked_group(&config, &group.id, name, provider));
+                let _ = (name, provider);
+                groups.push(prepared_fixed_group(&config, group, &available, &mut leaves)?);
                 rules.push(format!("{condition},{GROUP_PREFIX}{}", group.id).into());
                 // Mihomo skips a proxy rule for unsupported UDP. Never let that
                 // fall through to another group's node or the DIRECT default.
@@ -352,6 +526,7 @@ pub fn apply(mut config: Mapping, routing: &AppRoutingConfig, enabled: bool) -> 
         }
         claimed.extend(conditions);
     }
+    groups.extend(leaves.into_values());
     if !rule_apps.is_empty() {
         let (copies, aliases) = duplicate_groups(&original_groups, &routing.rule_selections)?;
         duplicate_rule_chain(&mut config, &original_rules, &aliases)?;
@@ -390,12 +565,15 @@ mod tests {
     }
 
     fn locked(result: &Mapping) -> &Value {
-        result["proxy-groups"]
-            .as_sequence()
-            .expect("groups")
+        let groups = result["proxy-groups"].as_sequence().expect("groups");
+        let selector = groups
             .iter()
             .find(|group| group["name"] == Value::from("__CV_APP_ai"))
-            .expect("APP group")
+            .expect("APP group");
+        groups
+            .iter()
+            .find(|group| group["name"] == selector["default-selected"])
+            .expect("source-bound leaf")
     }
 
     fn group(id: &str, target: AppTarget) -> AppRoutingGroup {
@@ -421,6 +599,38 @@ mod tests {
             name: "home-1".into(),
             provider: None,
         }
+    }
+
+    #[test]
+    fn fixed_choices_are_prepared_once_and_same_names_keep_distinct_sources() -> Result<()> {
+        let mut config = fixture();
+        config.insert("proxy-providers".into(), serde_yaml_ng::from_str("one: {type: inline, payload: [{name: home-1, type: socks5}]}\ntwo: {type: inline, payload: [{name: home-1, type: socks5}]}")?);
+        let result = apply(
+            config,
+            &AppRoutingConfig {
+                groups: vec![group("ai", fixed())],
+                ..Default::default()
+            },
+        )?;
+        let groups = result["proxy-groups"].as_sequence().expect("groups");
+        let selector = groups.iter().find(|g| g["name"] == "__CV_APP_ai").expect("selector");
+        let members = selector["proxies"].as_sequence().expect("members");
+        assert_eq!(members[0], "REJECT");
+        for source in [None, Some("one"), Some("two")] {
+            let name = app_node_group_name("home-1", source);
+            assert!(members.contains(&Value::from(name.as_str())));
+            let leaf = groups
+                .iter()
+                .find(|g| g["name"].as_str() == Some(name.as_str()))
+                .expect("leaf");
+            if let Some(source) = source {
+                assert_eq!(leaf["use"][0], source);
+            }
+            assert_eq!(leaf["empty-fallback"], "REJECT");
+        }
+        assert!(members.contains(&app_node_group_name("home-2", None).into()));
+        assert_eq!(selector["default-selected"], app_node_group_name("home-1", None));
+        Ok(())
     }
 
     #[test]

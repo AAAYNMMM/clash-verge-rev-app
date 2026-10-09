@@ -1,5 +1,5 @@
 use crate::core::notify::NoticeStatus;
-mod app_routing;
+pub(crate) mod app_routing;
 mod chain;
 pub mod field;
 mod merge;
@@ -965,7 +965,7 @@ pub async fn enhance(
     let config = cleanup_proxy_groups(config);
     let verge = Config::verge().await.latest_arc();
     let routing = verge.app_routing.clone().unwrap_or_default();
-    let config = app_routing::apply(config, &routing, verge.app_routing_active())?;
+    let config = app_routing::apply_live(config, &routing, verge.app_routing_active()).await?;
     let config = use_sort(config);
 
     let mut exists_keys_set = HashSet::new();

@@ -32,6 +32,10 @@ Build service helpers from the vendored service source, not renamed upstream bin
 
 Quality checks should target modified behavior, with actual Mihomo syntax and isolation checks for routing changes. Unit tests cannot establish production TUN end-to-end behavior.
 
+## Version policy
+
+Application versions follow the upstream Clash Verge Rev stable release. Do not independently increment this fork’s version for local fixes. Identify same-version rebuilds by source commit and installer SHA-256; publish matching signed updater metadata and note when a manual same-version installation is required.
+
 ## Public Windows bundles
 
 Release builds use an isolated Cargo cache outside the developer profile and a

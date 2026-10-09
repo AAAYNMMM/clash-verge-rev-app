@@ -16,11 +16,15 @@ import { mutate } from '@/services/mutate'
 import { debugLog } from '@/utils/debug'
 
 // 缓存连接清理
-const cleanupConnections = async (previousProxy: string) => {
+const cleanupConnections = async (groupName: string, previousProxy: string) => {
   try {
     const { connections } = await getConnections()
     const cleanupPromises = (connections ?? [])
-      .filter((conn) => conn.chains.includes(previousProxy))
+      .filter(
+        (conn) =>
+          conn.chains.includes(groupName) &&
+          conn.chains.includes(previousProxy),
+      )
       .map((conn) => closeConnection(conn.id))
 
     if (cleanupPromises.length > 0) {
@@ -99,7 +103,7 @@ export const useProxySelection = (options: ProxySelectionOptions = {}) => {
         }
 
         if (enableConnectionCleanup && autoCloseConnection && previousProxy) {
-          void cleanupConnections(previousProxy)
+          void cleanupConnections(groupName, previousProxy)
         }
       } catch (error) {
         console.error(

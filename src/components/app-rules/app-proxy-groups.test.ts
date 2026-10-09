@@ -25,6 +25,10 @@ const state = vi.hoisted(() => ({
   patch: vi.fn(async () => {}),
   refresh: vi.fn(async () => {}),
   coreSelect: vi.fn(async () => {}),
+  ruleSelect: vi.fn(),
+  fixedSelect: vi.fn(),
+  cache: vi.fn(),
+  error: vi.fn(),
 }))
 
 vi.mock('react-router', () => ({ useNavigate: () => vi.fn() }))
@@ -102,12 +106,14 @@ vi.mock('tauri-plugin-mihomo-api', () => ({
 }))
 vi.mock('@/services/cmds', () => ({
   matchAppNodes: vi.fn(),
-  selectAppGroupNode: vi.fn(),
+  selectAppGroupNode: state.fixedSelect,
+  selectAppRuleNode: state.ruleSelect,
 }))
-vi.mock('@/services/notice-service', () => ({ showNotice: { error: vi.fn() } }))
-vi.mock('@/services/mutate', () => ({ mutate: vi.fn() }))
+vi.mock('@/services/notice-service', () => ({
+  showNotice: { error: state.error },
+}))
 vi.mock('@/services/query-client', () => ({
-  setCacheData: vi.fn(),
+  setCacheData: state.cache,
   useQuery: () => ({
     data: { ai: ['home-1', 'home-2'] },
     isPending: false,
@@ -141,6 +147,21 @@ beforeEach(() => {
   state.patch.mockClear()
   state.refresh.mockClear()
   state.coreSelect.mockClear()
+  state.cache.mockClear()
+  state.error.mockClear()
+  state.ruleSelect
+    .mockReset()
+    .mockImplementation(async (name: string, member: string) => ({
+      groups: state.groups,
+      rule_selections: { [name]: member },
+    }))
+  state.fixedSelect
+    .mockReset()
+    .mockImplementation(
+      async (id: string, target: AppRoutingGroup['target']) => ({
+        groups: state.groups.map((g) => (g.id === id ? { ...g, target } : g)),
+      }),
+    )
   state.selected = []
   state.privateCopies = []
   state.groups = [
@@ -233,13 +254,91 @@ it('saves an inactive APP node preference without enabling routing or touching a
     ref: { kind: 'node', name: 'home-2', recordId: 'home-2' },
     node,
   })
-  await vi.waitFor(() => expect(state.refresh).toHaveBeenCalledOnce())
-  expect(state.patch).toHaveBeenCalledWith({
-    app_routing: {
-      groups: state.groups,
-      rule_selections: { Main: 'home-2' },
-    },
-  })
+  await vi.waitFor(() =>
+    expect(state.ruleSelect).toHaveBeenCalledWith('Main', 'home-2'),
+  )
+  expect(state.patch).not.toHaveBeenCalled()
+  expect(state.refresh).not.toHaveBeenCalled()
   expect(state.coreSelect).not.toHaveBeenCalled()
   expect(state.active).toBe(false)
+})
+
+const selectNode = (group: ProxyGroupView, name: string) => {
+  const node = state.nodes.find((n) => n.name === name)!
+  state.select!(group, {
+    kind: 'node',
+    ref: { kind: 'node', name, recordId: node.recordId },
+    node,
+  })
+}
+
+it('uses one hot selector command while active without patching or reloading configuration', async () => {
+  state.privateCopies = [
+    {
+      ...privateGroup('Main'),
+      now: 'home-1',
+      members: state.nodes.map((n) => ({
+        kind: 'node',
+        name: n.name,
+        recordId: n.recordId,
+      })),
+    },
+  ]
+  renderToStaticMarkup(createElement(AppProxyGroups))
+  selectNode(state.renderedGroups[0], 'home-2')
+  await vi.waitFor(() => expect(state.cache).toHaveBeenCalledTimes(2))
+  expect(state.ruleSelect).toHaveBeenCalledExactlyOnceWith('Main', 'home-2')
+  expect(state.patch).not.toHaveBeenCalled()
+  expect(state.coreSelect).not.toHaveBeenCalled()
+  expect(state.refresh).not.toHaveBeenCalled()
+})
+
+it('sends a fixed node source identity rather than an unstable record index', async () => {
+  state.nodes[0].source = {
+    kind: 'provider',
+    providerName: 'source-two',
+    proxyName: 'home-1',
+  }
+  renderToStaticMarkup(createElement(AppProxyGroups))
+  selectNode(state.renderedGroups[0], 'home-1')
+  await vi.waitFor(() => expect(state.cache).toHaveBeenCalledOnce())
+  expect(state.fixedSelect).toHaveBeenCalledExactlyOnceWith('ai', {
+    kind: 'node',
+    name: 'home-1',
+    provider: 'source-two',
+  })
+  expect(state.refresh).not.toHaveBeenCalled()
+})
+
+it('coalesces queued clicks but still applies the last choice instead of ignoring it', async () => {
+  let release!: (value: unknown) => void
+  state.ruleSelect.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        release = resolve
+      }),
+  )
+  state.privateCopies = [{ ...privateGroup('Main'), now: 'home-1' }]
+  renderToStaticMarkup(createElement(AppProxyGroups))
+  const group = state.renderedGroups[0]
+  selectNode(group, 'home-2')
+  selectNode(group, 'office-1')
+  selectNode(group, 'home-1')
+  expect(state.ruleSelect).toHaveBeenCalledOnce()
+  release({ groups: state.groups, rule_selections: { Main: 'home-2' } })
+  await vi.waitFor(() => expect(state.ruleSelect).toHaveBeenCalledTimes(2))
+  expect(state.ruleSelect.mock.calls).toEqual([
+    ['Main', 'home-2'],
+    ['Main', 'home-1'],
+  ])
+})
+
+it('does not publish a successful selection on backend failure', async () => {
+  state.ruleSelect.mockRejectedValueOnce(Error('disk failed'))
+  state.privateCopies = [privateGroup('Main')]
+  renderToStaticMarkup(createElement(AppProxyGroups))
+  selectNode(state.renderedGroups[0], 'home-2')
+  await vi.waitFor(() => expect(state.error).toHaveBeenCalledOnce())
+  expect(state.cache).not.toHaveBeenCalled()
+  expect(state.refresh).toHaveBeenCalledOnce()
 })
