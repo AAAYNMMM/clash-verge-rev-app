@@ -515,6 +515,7 @@ pub fn apply_with_candidates(
                 rules.push(format!("{condition},REJECT").into());
             }
             AppTarget::Direct => rules.push(format!("{condition},DIRECT").into()),
+            AppTarget::Reject => rules.push(format!("{condition},REJECT").into()),
             AppTarget::Node { name, provider } => {
                 let _ = (name, provider);
                 groups.push(prepared_fixed_group(&config, group, &available, &mut leaves)?);
@@ -533,11 +534,25 @@ pub fn apply_with_candidates(
         groups.extend(copies);
     }
     if base_mode != "rule" {
-        let condition = if rule_apps.is_empty() {
+        let mut condition = if rule_apps.is_empty() {
             "MATCH".into()
         } else {
             logical("NOT", &[any(&rule_apps)])
         };
+        if config
+            .get("dns")
+            .and_then(|dns| dns.get("respect-rules"))
+            .and_then(Value::as_bool)
+            == Some(true)
+        {
+            // Core DNS has no APP process identity; preserve its original root rule policy.
+            let external = logical("NOT", &["IN-TYPE,INNER".into()]);
+            condition = if condition == "MATCH" {
+                external
+            } else {
+                logical("AND", &[external, condition])
+            };
+        }
         let target = if base_mode == "global" { "GLOBAL" } else { "DIRECT" };
         rules.push(format!("{condition},{target}").into());
         // A global UDP-incompatible/PASS exit cannot fall into the subscription's rule chain.
@@ -594,6 +609,48 @@ mod tests {
         serde_yaml_ng::from_str("mode: rule\ntun: {enable: true}\nproxies:\n- {name: home-1, type: socks5}\n- {name: home-2, type: socks5}\nrules: ['DOMAIN,example.com,PASS', 'MATCH,normal']\nproxy-groups:\n- {name: normal, type: select, proxies: [home-2]}\n").expect("fixture")
     }
 
+    #[test]
+    fn builtin_exits_round_trip_and_compile_as_terminal_tun_rules() -> Result<()> {
+        for kind in ["direct", "reject"] {
+            let target: AppTarget = serde_json::from_value(serde_json::json!({"kind": kind}))?;
+            let mut first = group("translator", target);
+            first.node_patterns = vec!["[".into()];
+            let routing = AppRoutingConfig {
+                groups: vec![first, group("later", fixed())],
+                ..Default::default()
+            };
+            routing.validate()?;
+            let saved = serde_yaml_ng::to_string(&routing)?;
+            let reopened: AppRoutingConfig = serde_yaml_ng::from_str(&saved)?;
+            assert_eq!(serde_yaml_ng::to_string(&reopened)?, saved);
+            let result = apply(fixture(), &reopened)?;
+            let rules = result["rules"].as_sequence().expect("rules");
+            let exit = rules[LOCAL_RULES.len()].as_str().expect("exit");
+            assert!(exit.contains("IN-TYPE,TUN"));
+            assert!(exit.contains("PROCESS-NAME-REGEX"));
+            assert!(exit.ends_with(&format!(",{}", kind.to_uppercase())));
+            assert_eq!(rules[0], LOCAL_RULES[0]);
+            assert!(
+                rules[LOCAL_RULES.len() + 1]
+                    .as_str()
+                    .expect("next group")
+                    .contains("NOT,")
+            );
+            assert!(result.get("sub-rules").is_none());
+            assert!(
+                !result["proxy-groups"]
+                    .as_sequence()
+                    .expect("groups")
+                    .iter()
+                    .any(|g| g["name"] == "__CV_APP_translator")
+            );
+            let mut non_tun = fixture();
+            non_tun["tun"]["enable"] = false.into();
+            assert_eq!(apply(non_tun.clone(), &reopened)?, non_tun);
+        }
+        Ok(())
+    }
+
     fn fixed() -> AppTarget {
         AppTarget::Node {
             name: "home-1".into(),
@@ -646,6 +703,41 @@ mod tests {
         let mut no_tun = config;
         no_tun.insert("tun".into(), serde_yaml_ng::from_str("{enable: false}").expect("tun"));
         assert_eq!(super::apply(no_tun.clone(), &routing, true).expect("no tun"), no_tun);
+    }
+
+    #[test]
+    fn rule_respecting_internal_dns_bypasses_app_default_exits() -> Result<()> {
+        for mode in ["global", "direct"] {
+            for target in [AppTarget::Rule, fixed()] {
+                let mut config = fixture();
+                config.insert("mode".into(), mode.into());
+                config.insert(
+                    "dns".into(),
+                    serde_yaml_ng::from_str("{enable: true, respect-rules: true}")?,
+                );
+                let originals = config["rules"].as_sequence().expect("rules").clone();
+                let result = apply(
+                    config,
+                    &AppRoutingConfig {
+                        groups: vec![group("browser", target)],
+                        ..Default::default()
+                    },
+                )?;
+                let rules = result["rules"].as_sequence().expect("rules");
+                let fallback = rules[LOCAL_RULES.len() + 2].as_str().expect("default exit");
+                assert!(fallback.contains("NOT,((IN-TYPE,INNER))"), "{mode}: {fallback}");
+                let start = rules.len() - originals.len() - 1;
+                assert_eq!(&rules[start..rules.len() - 1], originals.as_slice());
+                if mode == "global" {
+                    assert_eq!(
+                        rules[LOCAL_RULES.len() + 3],
+                        fallback.strip_suffix(",GLOBAL").expect("global exit").to_owned() + ",REJECT"
+                    );
+                }
+                assert_eq!(result["dns"]["respect-rules"], true);
+            }
+        }
+        Ok(())
     }
 
     #[test]

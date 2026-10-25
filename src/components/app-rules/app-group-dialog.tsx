@@ -66,8 +66,8 @@ export const AppGroupDialog = ({
   )
   const [manual, setManual] = useState(false)
   const [picking, setPicking] = useState(false)
-  const [routeMode, setRouteMode] = useState<'rule' | 'node' | null>(
-    group.target.kind === 'direct' ? null : group.target.kind,
+  const [routeMode, setRouteMode] = useState<AppTarget['kind']>(
+    group.target.kind,
   )
   const [selectedNode, setSelectedNode] = useState<AppTarget | null>(
     group.target.kind === 'node' ? group.target : null,
@@ -101,7 +101,6 @@ export const AppGroupDialog = ({
     preview.isPending || !preview.data || patterns !== debouncedPatterns
   const invalid =
     !name.trim() ||
-    routeMode === null ||
     (routeMode === 'node' &&
       (selectedNode?.kind !== 'node' ||
         !!preview.error ||
@@ -137,9 +136,8 @@ export const AppGroupDialog = ({
   }
   const save = async () => {
     if (invalid || saving) return
-    const target =
-      routeMode === 'rule' ? { kind: 'rule' as const } : selectedNode
-    if (!target || target.kind === 'direct') return
+    const target = routeMode === 'node' ? selectedNode : { kind: routeMode }
+    if (!target) return
     const success = await onSave({
       ...group,
       name: name.trim(),
@@ -262,10 +260,16 @@ export const AppGroupDialog = ({
               <RadioGroup
                 row
                 aria-labelledby="app-route-mode-label"
-                value={routeMode ?? ''}
+                value={routeMode}
                 onChange={(event) => {
                   const value = event.target.value
-                  if (value === 'rule' || value === 'node') setRouteMode(value)
+                  if (
+                    value === 'rule' ||
+                    value === 'node' ||
+                    value === 'direct' ||
+                    value === 'reject'
+                  )
+                    setRouteMode(value)
                 }}
               >
                 <FormControlLabel
@@ -278,12 +282,23 @@ export const AppGroupDialog = ({
                   control={<Radio />}
                   label={t('rules.appRouting.fixedNode')}
                 />
+                <FormControlLabel
+                  value="direct"
+                  control={<Radio />}
+                  label={t('rules.appRouting.direct')}
+                />
+                <FormControlLabel
+                  value="reject"
+                  control={<Radio />}
+                  label={t('rules.appRouting.reject')}
+                />
               </RadioGroup>
             </FormControl>
-            {routeMode === null && (
-              <Alert severity="warning">
-                {t('rules.appRouting.legacyDirect')}
-              </Alert>
+            {routeMode === 'direct' && (
+              <Alert severity="info">{t('rules.appRouting.directHelp')}</Alert>
+            )}
+            {routeMode === 'reject' && (
+              <Alert severity="info">{t('rules.appRouting.rejectHelp')}</Alert>
             )}
             {routeMode === 'rule' && (
               <Alert severity="info">{t('rules.appRouting.ruleHelp')}</Alert>

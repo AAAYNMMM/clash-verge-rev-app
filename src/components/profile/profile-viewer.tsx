@@ -19,7 +19,7 @@ import { useProfiles } from '@/hooks/use-profiles'
 import { createProfile, patchProfile } from '@/services/cmds'
 import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
-import { version } from '@root/package.json'
+import { version } from '@/utils/app-version'
 
 import { FileInput } from './file-input'
 

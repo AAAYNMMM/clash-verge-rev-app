@@ -672,6 +672,8 @@ export interface TranslationResources {
         processNameFallback: string
         refreshApps: string
         refreshNodes: string
+        reject: string
+        rejectHelp: string
         routeMode: string
         ruleGroupSummary: string
         ruleGroupsUnavailable: string

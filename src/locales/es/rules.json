@@ -95,6 +95,8 @@
     "selectedTarget": "Selected route",
     "ruleMode": "Rule mode",
     "direct": "Direct",
+    "reject": "Reject",
+    "rejectHelp": "Block this group's public traffic without using proxy nodes or continuing through the original rules. Local destination exceptions still connect directly.",
     "unavailable": "Not in the current candidate list",
     "currentProfile": "Current profile",
     "timeout": "Timeout",

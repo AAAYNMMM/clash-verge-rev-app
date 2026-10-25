@@ -46,6 +46,7 @@ pub enum AppMatchKind {
 pub enum AppTarget {
     Rule,
     Direct,
+    Reject,
     Node {
         name: String,
         // A provider is part of a node's identity, not an interchangeable source.

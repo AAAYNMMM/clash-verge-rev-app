@@ -273,7 +273,9 @@ const AppRulesPage = () => {
                         : t(
                             group.target.kind === 'rule'
                               ? 'rules.appRouting.ruleMode'
-                              : 'rules.appRouting.direct',
+                              : group.target.kind === 'direct'
+                                ? 'rules.appRouting.direct'
+                                : 'rules.appRouting.reject',
                           )
                     }
                   />

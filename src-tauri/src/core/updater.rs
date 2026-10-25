@@ -171,19 +171,42 @@ pub fn is_build_to_stable(current: &str, remote: &str) -> bool {
     let Some((base, build)) = current.trim_start_matches('v').split_once('+') else {
         return false;
     };
-    !build.is_empty() && !base.contains('-') && base == remote.trim_start_matches('v')
+    !build.is_empty()
+        && !build.bytes().all(|byte| byte.is_ascii_digit())
+        && !base.contains('-')
+        && base == remote.trim_start_matches('v')
 }
 
-/// Compares numeric version components after stripping version suffixes.
+pub fn numeric_revision_update(current: &str, remote: &str) -> Option<bool> {
+    let parse = |version: &str| {
+        let version = version.trim_start_matches('v');
+        let (base, build) = version.split_once('+').unwrap_or((version, "0"));
+        if base.contains('-') {
+            return None;
+        }
+        Some((base.to_owned(), build.parse::<u64>().ok()?))
+    };
+    let (current_base, current_revision) = parse(current)?;
+    let (remote_base, remote_revision) = parse(remote)?;
+    (current_base == remote_base).then_some(remote_revision > current_revision)
+}
+
+/// Numeric build metadata is the fourth release component; other suffixes retain legacy ordering.
 fn version_lte(a: &str, b: &str) -> bool {
     let parse = |v: &str| -> Vec<u64> {
-        v.trim_start_matches('v')
-            .split(['-', '+'])
+        let v = v.trim_start_matches('v');
+        let (base, build) = v.split_once('+').unwrap_or((v, "0"));
+        let mut parts: Vec<u64> = base
+            .split('-')
             .next()
             .unwrap_or("0")
             .split('.')
             .filter_map(|part| part.parse::<u64>().ok())
-            .collect()
+            .collect();
+        if !base.contains('-') {
+            parts.push(build.parse::<u64>().unwrap_or(0));
+        }
+        parts
     };
 
     let a_parts = parse(a);
@@ -201,6 +224,26 @@ fn version_lte(a: &str, b: &str) -> bool {
         }
     }
     true // equal
+}
+
+#[cfg(test)]
+mod version_tests {
+    use super::*;
+
+    #[test]
+    fn numeric_revisions_are_not_autobuilds_and_cached_updates_cannot_downgrade() {
+        assert!(!is_build_to_stable("2.5.8+1", "2.5.8"));
+        assert!(is_build_to_stable("2.5.8+20261025.abc", "2.5.8"));
+        assert!(version_lte("2.5.8", "2.5.8+1"));
+        assert!(version_lte("2.5.8+1", "2.5.8+1"));
+        assert!(!version_lte("2.5.8+2", "2.5.8+1"));
+        assert!(!version_lte("2.5.9", "2.5.8+1"));
+        assert_eq!(numeric_revision_update("2.5.8+1", "2.5.8"), Some(false));
+        assert_eq!(numeric_revision_update("2.5.8+1", "2.5.8+2"), Some(true));
+        assert_eq!(numeric_revision_update("2.5.8", "2.5.8+1"), Some(true));
+        assert_eq!(numeric_revision_update("2.5.8+1", "2.5.9"), None);
+        assert_eq!(numeric_revision_update("2.5.8+20261025.abc", "2.5.8"), None);
+    }
 }
 
 /// Maps UI language to one of the three NSIS translations, defaulting to English.

@@ -35,7 +35,11 @@ const extractSemver = (input: string | null | undefined): string | null => {
 const compareVersions = (a: string | null, b: string | null): number | null => {
   if (!a || !b) return null
   try {
-    return compareSemver(a, b)
+    const numericRevision = /^(\d+\.\d+\.\d+)\+(\d+)$/
+    return compareSemver(
+      a.replace(numericRevision, '$1.$2'),
+      b.replace(numericRevision, '$1.$2'),
+    )
   } catch {
     return null
   }
@@ -80,6 +84,7 @@ export const checkUpdateSafe = async (
 
   const isBuildToStable =
     /^\d+\.\d+\.\d+\+[0-9A-Za-z.-]+$/.test(localVersionNormalized ?? '') &&
+    !/^\d+\.\d+\.\d+\+\d+$/.test(localVersionNormalized ?? '') &&
     remoteVersion === localVersionNormalized?.split('+')[0]
 
   if (comparison !== null && comparison <= 0 && !isBuildToStable) {

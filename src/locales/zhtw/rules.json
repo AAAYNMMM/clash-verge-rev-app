@@ -95,6 +95,8 @@
     "selectedTarget": "当前出口",
     "ruleMode": "規則模式",
     "direct": "直連",
+    "reject": "拒絕",
+    "rejectHelp": "阻擋此群組的公網連線，不使用代理節點，也不繼續匹配原有規則。本機目標直連特例仍優先。",
     "unavailable": "不在当前候选列表中",
     "currentProfile": "当前订阅",
     "timeout": "超时",

@@ -434,9 +434,9 @@ impl Tray {
         let tun_text = clash_verge_i18n::t!("tray.tooltip.tun");
         let profile_text = clash_verge_i18n::t!("tray.tooltip.profile");
 
-        let v = env!("CARGO_PKG_VERSION");
+        let v = crate::utils::version::display_version(env!("CARGO_PKG_VERSION"));
         let reassembled_version = v.split_once('+').map_or_else(
-            || v.into(),
+            || v.clone(),
             |(main, rest)| format!("{main}+{}", rest.split('.').next().unwrap_or("")),
         );
 
@@ -826,7 +826,7 @@ async fn create_tray_menu(
 
     let show_outbound_modes_inline = verge_settings.tray_inline_outbound_modes.unwrap_or(false);
 
-    let version = env!("CARGO_PKG_VERSION");
+    let version = crate::utils::version::display_version(env!("CARGO_PKG_VERSION"));
 
     let hotkeys = create_hotkeys(&verge_settings.hotkeys);
 

@@ -1,6 +1,6 @@
 # TUN APP Routing — Compilation and Runtime Contract
 
-适用版本：`v2.5.8`。此文档描述配置语义、执行路径与失败边界，不是软件操作教程。
+适用版本：`v2.5.8.1`。此文档描述配置语义、执行路径与失败边界，不是软件操作教程。
 
 ## 1. 状态模型
 
@@ -36,7 +36,9 @@ APP 规则使用 `IN-TYPE,TUN` 与进程表达式组合。因此，同一内核�
 
 `AppMatcher` 支持两类字面量：`Name` 和 `Path`。生成器将输入转义并锚定为精确匹配，Windows 使用大小写不敏感规则。多个程序条件取 OR；对于已由更高优先级分组声明的程序，后续分组加入 NOT 保护，**首个启用的匹配组决定出口**。
 
-`AppTarget::Rule` 不再委托给原始顶层规则链，而是进入 `__CV_APP_RULES` 独立子规则链。编译器复制当前订阅的全部可用代理组，以十六进制编码后的稳定名称 `__CV_APP_RULE_<hex-UTF8-original-name>` 隐藏存放。规则目标被重写为 APP 私有组；`sub-rules` 也复制为私有名称，原链不变。APP 规则代理组的选择保存于 `app_routing.rule_selections`，在「代理 → APP」单独调整；不会改变 TUN 代理组的选择。`AppTarget::Node` 创建隐藏的 `__CV_APP_<group-id>` 手动选择组，其成员是预编译的来源绑定节点组。每个节点组以 `__CV_APP_NODE:<hex-JSON(provider,name)>` 命名，只引用一个原始来源，空组使用 `REJECT`；进程入口后另有同条件的 `REJECT` 兜底。历史 `Direct` 目标仍由后端识别，但新的分组 UI 不提供该选项。
+`AppTarget::Rule` 不再委托给原始顶层规则链，而是进入 `__CV_APP_RULES` 独立子规则链。编译器复制当前订阅的全部可用代理组，以十六进制编码后的稳定名称 `__CV_APP_RULE_<hex-UTF8-original-name>` 隐藏存放。规则目标被重写为 APP 私有组；`sub-rules` 也复制为私有名称，原链不变。APP 规则代理组的选择保存于 `app_routing.rule_selections`，在「代理 → APP」单独调整；不会改变 TUN 代理组的选择。`AppTarget::Node` 创建隐藏的 `__CV_APP_<group-id>` 手动选择组，其成员是预编译的来源绑定节点组。每个节点组以 `__CV_APP_NODE:<hex-JSON(provider,name)>` 命名，只引用一个原始来源，空组使用 `REJECT`；进程入口后另有同条件的 `REJECT` 兜底。
+
+`AppTarget::Direct` 与 `AppTarget::Reject` 是编辑器中的独立出口，持久化为 `{kind: direct}` / `{kind: reject}`。保存时清空节点筛选，不需要候选节点，也不验证遗留的节点正则。后端仍接受历史 Direct。两者直接生成带相同进程、TUN 入站及首组优先保护的 `DIRECT` / `REJECT` 终结规则，不创建 APP 节点组或订阅子链；本地目的地址直连特例仍优先。固定节点热切换命令仍只接受 Node，出口类型切换走既有分组配置事务。
 
 代理页的 APP 按钮只切换节点视图，不修改 `enable_app_routing`。分流关闭时仍可编辑节点选择：APP 规则代理组以订阅组结构生成独立预览，节点选择仅持久化，不重载或启动内核；实际分流由首页或 APP 规则页的独立开关启用。
 
@@ -45,6 +47,8 @@ APP 规则使用 `IN-TYPE,TUN` 与进程表达式组合。因此，同一内核�
 - `rule`：原始订阅规则按其顶层顺序继续匹配。
 - `global`：生成器将未被委托的连接转到 `GLOBAL`，同时保持已选节点不受 APP 分组影响。可选择的全局成员取自 APP 私有分组加入**之前**的内核列表，防止私有组污染全局候选。
 - `direct`：未被委托的连接走 `DIRECT`。
+
+当 `dns.respect-rules: true` 时，以上 `global` / `direct` 默认出口及全局拒绝兜底额外排除 `IN-TYPE,INNER`。内核 DNS 不带浏览器进程身份，必须继续进入未改写的订阅根规则，而不是落入 APP 生成的默认出口。该边界同样适用于没有 Rule 分组、仅有固定节点/直连/拒绝分组或空分组的配置。不硬编码 DNS 服务商、不关闭 `respect-rules`，也不把内核 DNS 伪装成某个 APP；显式 DNS 出口仍由 Mihomo 与原订阅策略决定。
 
 全局模式与规则模式的交替并非二次代理；每条连接仅在当前规则链中选择一次终结出口。APP 私有子规则链尾部增加 `MATCH,REJECT`，且根规则内进程入口后有对应 `REJECT`，防止 UDP 不支持或子规则提前退出造成回退到 TUN 出口。复制后的 `PASS` 转为 `PASS-RULE`，避免跳回 TUN 根规则链。
 
@@ -94,3 +98,9 @@ APP 规则使用 `IN-TYPE,TUN` 与进程表达式组合。因此，同一内核�
 隔离配置的合成、UI 选择与 Mihomo 配置解析可分别进行回归检查；生产网络中的完整 TUN 端到端行为仍依赖操作系统环境、进程识别及内核版本。
 
 **代码锚点**：`src-tauri/src/enhance/app_routing.rs`、`src-tauri/src/config/app_routing.rs`、`src-tauri/src/feat/app_routing.rs`、`src/components/app-rules/app-proxy-groups.tsx`、`src/pages/proxies.tsx`。
+
+## 6. 修订版标识
+
+对外显示 `v2.5.8.1`，Cargo、Tauri、npm 与 Cargo.lock 使用有效 SemVer `2.5.8+1`。前端版本显示及托盘将纯数字 build 映射为第四段；NSIS 模板的显示/注册版本使用 `version_with_build`，Windows PE 的数字版本由 Tauri 映射为 `2.5.8.1`。安装器的 FileVersion、ProductVersion、注册表 DisplayVersion 及对外交付文件名使用四段版本；主程序 PE 字符串元数据仍为内部 SemVer。实际安装包须在产出后核对版本与文件名，不能以映射函数通过替代打包验收。
+
+更新比较将纯数字 build 视为第四段修订，不允许 `2.5.8` 或相同/更低修订覆盖 `2.5.8+1`；现有带提交信息的非数字 autobuild 转 stable 逻辑保留。前端手动检查、后端插件比较和缓存安装检查均遵循此边界。updater 线上版本字段须使用有效 SemVer，不能直接把四段标签当成 Tauri updater 版本。手动下载安装包的发布不自动修改 updater 元数据；更新通道发布需独立核验有效版本、签名和资产。

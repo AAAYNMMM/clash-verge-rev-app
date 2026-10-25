@@ -420,6 +420,8 @@ export const translationKeys = [
   'rules.appRouting.selectedTarget',
   'rules.appRouting.ruleMode',
   'rules.appRouting.direct',
+  'rules.appRouting.reject',
+  'rules.appRouting.rejectHelp',
   'rules.appRouting.unavailable',
   'rules.appRouting.currentProfile',
   'rules.appRouting.timeout',

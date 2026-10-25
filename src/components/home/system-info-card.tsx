@@ -22,7 +22,7 @@ import {
 import { useVerge } from '@/hooks/use-verge'
 import { getSystemInfo } from '@/services/cmds'
 import { showNotice } from '@/services/notice-service'
-import { version as appVersion } from '@root/package.json'
+import { version as appVersion } from '@/utils/app-version'
 
 import { EnhancedCard } from './enhanced-card'
 

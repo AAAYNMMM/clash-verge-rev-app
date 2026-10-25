@@ -6,6 +6,7 @@ export interface AppMatcher {
 export type AppTarget =
   | { kind: 'rule' }
   | { kind: 'direct' }
+  | { kind: 'reject' }
   | { kind: 'node'; name: string; provider?: string | null }
 
 export interface AppRoutingGroup {

@@ -76,10 +76,7 @@ export const nodeFilters = (patterns: string) => {
   return filters.length ? filters : ['.*']
 }
 
-export const groupRouteFields = (
-  target: Exclude<AppTarget, { kind: 'direct' }>,
-  patterns: string,
-) => ({
+export const groupRouteFields = (target: AppTarget, patterns: string) => ({
   target,
   node_patterns: target.kind === 'node' ? nodeFilters(patterns) : [],
 })
