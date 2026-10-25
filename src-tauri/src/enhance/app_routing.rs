@@ -583,7 +583,7 @@ mod tests {
         let groups = result["proxy-groups"].as_sequence().expect("groups");
         let selector = groups
             .iter()
-            .find(|group| group["name"] == Value::from("__CV_APP_ai"))
+            .find(|group| group["name"] == "__CV_APP_ai")
             .expect("APP group");
         groups
             .iter()
@@ -766,7 +766,7 @@ mod tests {
             .as_sequence()
             .expect("groups")
             .iter()
-            .find(|g| g["name"] == Value::from("GLOBAL"))
+            .find(|g| g["name"] == "GLOBAL")
             .expect("global");
         assert!(
             !global["proxies"]

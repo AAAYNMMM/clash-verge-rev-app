@@ -180,7 +180,7 @@ mod app_overlay_tests {
         }
         let disabled = IVerge {
             enable_app_routing: Some(false),
-            ..current.clone()
+            ..current
         };
         let patch = normalize_app_patch(
             &disabled,

@@ -157,12 +157,12 @@ mod selection_tests {
 
     fn fixture() -> Result<AppRoutingConfig> {
         Ok(serde_yaml_ng::from_str(
-            r#"
+            r"
 groups:
 - {id: ai, name: AI, apps: [{kind: name, value: ai.exe}], node_patterns: ['^home-'], target: {kind: node, name: home-1}}
 - {id: chat, name: Chat, apps: [{kind: name, value: chat.exe}], node_patterns: ['^home-'], target: {kind: node, name: home-1}}
 - {id: browser, name: Browser, apps: [{kind: name, value: browser.exe}], target: {kind: rule}}
-"#,
+",
         )?)
     }
 
@@ -279,14 +279,14 @@ mod filter_tests {
     #[test]
     fn saved_selection_uses_fancy_filters_without_changing_other_settings() -> Result<()> {
         let routing: AppRoutingConfig = serde_yaml_ng::from_str(
-            r#"
+            r"
 groups:
 - id: ai
   name: AI
   apps: [{kind: name, value: ai.exe}]
   node_patterns: ['^(?=.*home)(?!.*office).*$']
   target: {kind: node, name: JP-home-1}
-"#,
+",
         )?;
         routing.validate()?;
         let snapshot = serde_yaml_ng::to_string(&routing)?;
