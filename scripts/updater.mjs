@@ -79,6 +79,7 @@ async function processRelease(github, options, tag, isAlpha) {
     const releaseUrl = `https://github.com/${options.owner}/${options.repo}/releases/tag/${tag.name}`
 
     const updateData = {
+      version: tag.name.replace(/^v/i, ''),
       name: tag.name,
       notes: `${notes}\n\n**[See More](${releaseUrl})**`,
       pub_date: new Date().toISOString(),
@@ -245,16 +246,22 @@ async function processRelease(github, options, tag, isAlpha) {
       }
     })
 
-    await Promise.allSettled(promises)
+    const downloadResults = await Promise.allSettled(promises)
+    if (downloadResults.some((result) => result.status === 'rejected')) {
+      throw new Error('Could not fetch release signatures; update metadata is unchanged')
+    }
     console.log(updateData)
 
     Object.entries(updateData.platforms).forEach(([key, value]) => {
-      if (!value.url) {
+      if (!value.url || !value.signature?.trim()) {
         console.log(`[Error]: failed to parse release for "${key}"`)
         delete updateData.platforms[key]
       }
     })
 
+    if (!isAlpha && !updateData.platforms['windows-x86_64-nsis']) {
+      throw new Error('Windows x64 installer and valid nonempty Tauri signature are required')
+    }
     const updateDataNew = JSON.parse(JSON.stringify(updateData))
 
     Object.entries(updateDataNew.platforms).forEach(([key, value]) => {
@@ -347,12 +354,14 @@ async function processRelease(github, options, tag, isAlpha) {
         `Failed to process ${isAlpha ? 'alpha' : 'stable'} release:`,
         error.message,
       )
+      throw error
     }
   } catch (error) {
     if (error.status === 404) {
       console.log(`Release not found for tag: ${tag.name}, skipping...`)
     } else {
       console.error(`Failed to get release for tag: ${tag.name}`, error.message)
+      throw error
     }
   }
 }
@@ -363,7 +372,15 @@ async function getSignature(url) {
     headers: { 'Content-Type': 'application/octet-stream' },
   })
 
-  return response.text()
+  if (!response.ok) {
+    throw new Error('Could not download Tauri update signature')
+  }
+  const signature = (await response.text()).trim()
+  if (!signature) throw new Error('Tauri update signature must not be empty')
+  return signature
 }
 
-resolveUpdater().catch(console.error)
+resolveUpdater().catch((error) => {
+  console.error(error)
+  process.exitCode = 1
+})

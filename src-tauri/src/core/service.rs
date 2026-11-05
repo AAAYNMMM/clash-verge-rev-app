@@ -13,7 +13,7 @@ use crate::{
             CORE_REJECTED_PREFIX, OwnerRecoveryReason, OwnerSample, OwnerStep, OwnerWatch, PendingAction, RUN_STATE,
             ReadyWaitError, RunState, RunStateEnv, RunStateStore, ServiceHealth,
         },
-        runtime_bundle::{RemoteProviderRef, collect_runtime_bundle, remote_providers_of},
+        runtime_bundle::{GEO_ASSETS, RemoteProviderRef, collect_runtime_bundle, remote_providers_of},
         tray::Tray,
     },
     process::AsyncHandler,
@@ -44,7 +44,7 @@ static PENDING_SERVICE_REPAIR_NOTICE: AtomicBool = AtomicBool::new(false);
 static PENDING_SERVICE_OWNER_NOTICE: Mutex<Option<String>> = Mutex::new(None);
 
 /// Why the Service was unavailable when the core fell back to Sidecar.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, specta::Type)]
 #[serde(tag = "kind", content = "reason", rename_all = "camelCase")]
 pub enum ServiceFallbackNotice {
     Unavailable,
@@ -101,6 +101,7 @@ struct ActiveServiceSession {
     proof: OwnerSessionProof,
     supports_runtime_staging: bool,
     supports_runtime_file_read: bool,
+    supports_runtime_geo_read: bool,
 }
 
 fn generate_service_session_token() -> Result<String> {
@@ -132,6 +133,13 @@ pub(crate) fn active_service_supports_runtime_file_read() -> bool {
         .is_some_and(|session| session.supports_runtime_file_read)
 }
 
+fn active_service_supports_runtime_geo_read() -> bool {
+    ACTIVE_SERVICE_SESSION
+        .lock()
+        .as_ref()
+        .is_some_and(|session| session.supports_runtime_geo_read)
+}
+
 pub(crate) fn clear_active_service_session() {
     ACTIVE_SERVICE_SESSION.lock().take();
 }
@@ -140,6 +148,7 @@ pub(crate) fn clear_active_service_session() {
 struct ServiceCapabilities {
     runtime_staging: bool,
     runtime_file_read: bool,
+    runtime_geo_read: bool,
 }
 
 impl ServiceCapabilities {
@@ -147,6 +156,9 @@ impl ServiceCapabilities {
         Self {
             runtime_staging: info.supports_runtime_staging(),
             runtime_file_read: info.supports_runtime_file_read(),
+            // Fork service v2.7.6 has no explicit GEO database read capability.
+            // Do not negotiate this until the service protocol implements it.
+            runtime_geo_read: false,
         }
     }
 }
@@ -952,6 +964,7 @@ pub(super) async fn start_with_existing_service(config_file: &Path) -> Result<()
         },
         supports_runtime_staging: capabilities.runtime_staging,
         supports_runtime_file_read: capabilities.runtime_file_read,
+        supports_runtime_geo_read: capabilities.runtime_geo_read,
     });
 
     // PAC follows the Running Mode; the caller opens it via `core_started(Service)`.
@@ -1200,6 +1213,62 @@ async fn sync_runtime_providers_by_service() -> Result<ProviderSync> {
     tracing::Span::current().record("synced", outcome.synced);
     tracing::Span::current().record("pending", outcome.pending);
     Ok(outcome)
+}
+
+/// Pulls geo databases the service core rewrote, because validation reads the app dir.
+pub(crate) async fn sync_runtime_geo_by_service() {
+    if !active_service_supports_runtime_geo_read() {
+        return;
+    }
+    let (Ok(credentials), Ok(session), Ok(app_dir)) = (
+        current_owner_credentials(),
+        active_service_session(),
+        dirs::app_home_dir(),
+    ) else {
+        return;
+    };
+    for asset in GEO_ASSETS {
+        if let Err(error) = sync_runtime_geo(&credentials, &session, asset, &app_dir.join(asset)).await {
+            logging!(warn, Type::Service, "failed to sync geo database {asset}: {error:#}");
+        }
+    }
+}
+
+async fn sync_runtime_geo(
+    credentials: &OwnerCredentials,
+    session: &OwnerSessionProof,
+    asset: &str,
+    target: &Path,
+) -> Result<()> {
+    let Ok(local) = tokio::fs::metadata(target).await else {
+        return Ok(());
+    };
+    let Some((Some(_), _, Some(runtime_mtime_ns))) = read_chunk(credentials, session, asset, u64::MAX).await? else {
+        return Ok(());
+    };
+    // A newer local file is a change the next staging still has to copy into the runtime.
+    if UNIX_EPOCH + Duration::from_nanos(runtime_mtime_ns) <= local.modified()? {
+        return Ok(());
+    }
+    let (temp, file) = create_sync_temp(target).await?;
+    let result = async {
+        if let Fetch::Complete {
+            mtime_ns: Some(mtime_ns),
+            ..
+        } = fetch_runtime_file(credentials, session, asset, file).await?
+        {
+            // Matching the runtime copy's time lets the service skip copying these bytes straight back.
+            std::fs::File::options()
+                .write(true)
+                .open(&temp)?
+                .set_modified(UNIX_EPOCH + Duration::from_nanos(mtime_ns))?;
+            tokio::fs::rename(&temp, target).await?;
+        }
+        anyhow::Ok(())
+    }
+    .await;
+    remove_temp(&temp).await;
+    result
 }
 
 // The on-disk YAML may describe a rejected apply; use the committed runtime.

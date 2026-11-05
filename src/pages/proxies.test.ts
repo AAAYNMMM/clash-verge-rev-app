@@ -59,6 +59,7 @@ vi.mock('@/components/base', () => ({
       children,
     ),
   TooltipIcon: () => null,
+  BaseDialog: () => null,
 }))
 vi.mock('@/components/proxy/provider-button', () => ({
   ProviderButton: () => null,

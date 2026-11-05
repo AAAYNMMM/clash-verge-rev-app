@@ -1,9 +1,13 @@
+import { useEffect } from 'react'
+
+import { showNotice } from '@/services/notice-service'
 import { fetchCacheData, setCacheData, useQuery } from '@/services/query-client'
 import { checkUpdateSafe } from '@/services/update'
 
 import { useVerge } from './use-verge'
 
 const LAST_CHECK_KEY = 'last_check_update'
+const LAST_NOTIFIED_VERSION_KEY = 'last_notified_release_version'
 
 export const readLastCheckTime = (): number | null => {
   const stored = localStorage.getItem(LAST_CHECK_KEY)
@@ -41,6 +45,14 @@ export const useUpdate = (enabled: boolean = true) => {
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: false,
   })
+
+  useEffect(() => {
+    if (!shouldCheck || !updateInfo?.available) return
+    if (localStorage.getItem(LAST_NOTIFIED_VERSION_KEY) === updateInfo.version)
+      return
+    localStorage.setItem(LAST_NOTIFIED_VERSION_KEY, updateInfo.version)
+    showNotice.info('shared.feedback.notifications.updateAvailable')
+  }, [shouldCheck, updateInfo])
 
   const checkUpdate = async () => {
     const data = await fetchCacheData(['checkUpdate'], fetchUpdate)

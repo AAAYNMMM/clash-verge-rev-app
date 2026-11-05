@@ -1,28 +1,12 @@
-import { alpha, Box, Button, LinearProgress } from '@mui/material'
-import type { DownloadEvent } from '@tauri-apps/plugin-updater'
-import { useLockFn } from 'ahooks'
+import { alpha, Box, LinearProgress } from '@mui/material'
 import type { Ref } from 'react'
-import {
-  lazy,
-  Suspense,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import { lazy, Suspense, useImperativeHandle, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Options as ReactMarkdownOptions } from 'react-markdown'
 
 import { BaseDialog, DialogRef } from '@/components/base'
 import { useUpdate } from '@/hooks/use-update'
-import {
-  cancelUpdateDownload,
-  installUpdate,
-  restartApp,
-} from '@/services/cmds'
-import { mutate } from '@/services/mutate'
 import { showNotice } from '@/services/notice-service'
-import { useSetUpdateState, useUpdateState } from '@/services/states'
 import { openExternalUrl } from '@/utils/open-external-url'
 
 type MarkdownNode = {
@@ -72,12 +56,10 @@ const LazyReactMarkdown = lazy(async () => {
     { default: ReactMarkdown },
     { default: rehypeRaw },
     { default: rehypeSanitize, defaultSchema },
-    { default: remarkGfm },
   ] = await Promise.all([
     import('react-markdown'),
     import('rehype-raw'),
     import('rehype-sanitize'),
-    import('remark-gfm'),
   ])
 
   const sanitizeSchema = {
@@ -104,7 +86,6 @@ const LazyReactMarkdown = lazy(async () => {
     default: (props: ReactMarkdownOptions) => (
       <ReactMarkdown
         {...props}
-        remarkPlugins={[remarkGfm, ...(props.remarkPlugins ?? [])]}
         rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
       />
     ),
@@ -180,24 +161,11 @@ export function UpdateViewer({ ref }: { ref?: Ref<DialogRef> }) {
   const { t, i18n } = useTranslation()
 
   const [open, setOpen] = useState(false)
-  const updateState = useUpdateState()
-  const setUpdateState = useSetUpdateState()
-
   const { updateInfo } = useUpdate()
-
-  const [downloaded, setDownloaded] = useState(0)
-  const [total, setTotal] = useState(0)
-  const downloadedRef = useRef(0)
-  const totalRef = useRef(0)
 
   const openUrlWithNotice = (url: string) => {
     void openExternalUrl(url).catch(showNotice.error)
   }
-
-  const progress = useMemo(() => {
-    if (total <= 0) return 0
-    return Math.min((downloaded / total) * 100, 100)
-  }, [downloaded, total])
 
   useImperativeHandle(ref, () => ({
     open: () => setOpen(true),
@@ -230,75 +198,6 @@ export function UpdateViewer({ ref }: { ref?: Ref<DialogRef> }) {
     return updateInfo?.body
   }, [activeLanguage, t, updateInfo])
 
-  const breakChangeFlag = useMemo(() => {
-    if (!updateInfo?.body) {
-      return false
-    }
-    return updateInfo?.body.toLowerCase().includes('break change')
-  }, [updateInfo])
-
-  const onUpdate = useLockFn(async () => {
-    if (!updateInfo?.body) return
-    if (breakChangeFlag) {
-      showNotice.error('settings.modals.update.messages.breakChangeError')
-      return
-    }
-    if (updateState) return
-    setUpdateState(true)
-    setDownloaded(0)
-    setTotal(0)
-    downloadedRef.current = 0
-    totalRef.current = 0
-
-    const onDownloadEvent = (event: DownloadEvent) => {
-      if (event.event === 'Started') {
-        const contentLength = event.data.contentLength ?? 0
-        totalRef.current = contentLength
-        setTotal(contentLength)
-        setDownloaded(0)
-        downloadedRef.current = 0
-        return
-      }
-
-      if (event.event === 'Progress') {
-        setDownloaded((prev) => {
-          const next = prev + event.data.chunkLength
-          downloadedRef.current = next
-          return next
-        })
-      }
-
-      if (event.event === 'Finished' && totalRef.current === 0) {
-        totalRef.current = downloadedRef.current
-        setTotal(downloadedRef.current)
-      }
-    }
-
-    try {
-      const result = await mutate(
-        () => installUpdate(updateInfo.version, onDownloadEvent),
-        {
-          id: 'install-app-update',
-          errorNotice: false,
-        },
-      )
-      if (result.ok && result.value) {
-        await mutate(() => restartApp(), {
-          id: 'restart-app',
-          errorNotice: false,
-        })
-      }
-    } catch (err: any) {
-      showNotice.error(err)
-    } finally {
-      setUpdateState(false)
-      setDownloaded(0)
-      setTotal(0)
-      downloadedRef.current = 0
-      totalRef.current = 0
-    }
-  })
-
   return (
     <BaseDialog
       open={open}
@@ -325,18 +224,6 @@ export function UpdateViewer({ ref }: { ref?: Ref<DialogRef> }) {
               version: updateInfo?.version ?? '',
             })}
           </Box>
-          <Button
-            variant="contained"
-            size="small"
-            sx={{ whiteSpace: 'nowrap' }}
-            onClick={() => {
-              openUrlWithNotice(
-                `https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v${updateInfo?.version}`,
-              )
-            }}
-          >
-            {t('settings.modals.update.actions.goToRelease')}
-          </Button>
         </Box>
       }
       contentSx={{
@@ -347,19 +234,15 @@ export function UpdateViewer({ ref }: { ref?: Ref<DialogRef> }) {
         flexDirection: 'column',
         pb: 1,
       }}
-      okBtn={t('settings.modals.update.actions.update')}
+      okBtn={t('settings.modals.update.actions.goToRelease')}
       cancelBtn={t('shared.actions.cancel')}
       onClose={() => setOpen(false)}
-      onCancel={() => {
-        if (updateState) {
-          void mutate(() => cancelUpdateDownload(), {
-            id: 'cancel-update-download',
-            errorNotice: false,
-          }).catch(showNotice.error)
-        }
-        setOpen(false)
-      }}
-      onOk={onUpdate}
+      onCancel={() => setOpen(false)}
+      onOk={() =>
+        openUrlWithNotice(
+          `https://github.com/AAAYNMMM/clash-verge-rev-app/releases/tag/v${updateInfo?.version}`,
+        )
+      }
     >
       <Box
         sx={{
@@ -563,13 +446,6 @@ export function UpdateViewer({ ref }: { ref?: Ref<DialogRef> }) {
           </Suspense>
         )}
       </Box>
-      {updateState && (
-        <LinearProgress
-          variant={total > 0 ? 'determinate' : 'indeterminate'}
-          value={progress}
-          sx={{ mt: 1 }}
-        />
-      )}
     </BaseDialog>
   )
 }

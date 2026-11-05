@@ -2,25 +2,44 @@ import { beforeEach, expect, it, vi } from 'vitest'
 
 import { checkUpdateSafe } from './update'
 
-const state = vi.hoisted(() => ({ check: vi.fn() }))
-vi.mock('@tauri-apps/plugin-updater', () => ({ check: state.check }))
+const state = vi.hoisted(() => ({ fetch: vi.fn() }))
+vi.mock('@tauri-apps/plugin-http', () => ({ fetch: state.fetch }))
 vi.mock('@root/package.json', () => ({ version: '2.5.8+1' }))
 
-beforeEach(() => state.check.mockReset())
+beforeEach(() => state.fetch.mockReset())
 
-it.each(['2.5.8', '2.5.8+0', '2.5.8+1', '2.5.7'])(
-  'does not replace the numeric revision with %s',
-  async (version) => {
-    const update = { version, close: vi.fn() }
-    state.check.mockResolvedValue(update)
+it.each(['v2.5.8', 'v2.5.8.1', 'v2.5.7'])(
+  'does not offer older or equal release %s',
+  async (tag_name) => {
+    state.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({ tag_name }),
+    })
     expect(await checkUpdateSafe()).toBeNull()
-    expect(update.close).toHaveBeenCalledOnce()
   },
 )
 
-it.each(['2.5.8+2', '2.5.9'])('accepts newer release %s', async (version) => {
-  const update = { version, close: vi.fn() }
-  state.check.mockResolvedValue(update)
-  expect(await checkUpdateSafe()).toBe(update)
-  expect(update.close).not.toHaveBeenCalled()
+it('returns a newer stable release and notes', async () => {
+  state.fetch.mockResolvedValue({
+    ok: true,
+    json: async () => ({ tag_name: 'v2.5.10', body: 'Release notes' }),
+  })
+  expect(await checkUpdateSafe()).toEqual({
+    available: true,
+    version: '2.5.10',
+    body: 'Release notes',
+  })
+})
+
+it('reports a failed request instead of reporting the latest version', async () => {
+  state.fetch.mockResolvedValue({ ok: false, status: 403 })
+  await expect(checkUpdateSafe()).rejects.toThrow('HTTP 403')
+})
+
+it('rejects a release with an invalid tag', async () => {
+  state.fetch.mockResolvedValue({
+    ok: true,
+    json: async () => ({ tag_name: 'updater' }),
+  })
+  await expect(checkUpdateSafe()).rejects.toThrow('invalid version')
 })

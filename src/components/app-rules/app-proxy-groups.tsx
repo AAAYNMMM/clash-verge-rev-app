@@ -200,6 +200,7 @@ export const AppProxyGroups = () => {
 
   return (
     <ProxyGroups
+      onExitChainMode={() => {}}
       mode="app"
       appGroups={visibleGroups}
       onAppSelect={(group, member) => {

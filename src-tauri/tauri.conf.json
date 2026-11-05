@@ -1,5 +1,5 @@
 {
-  "version": "2.5.8+1",
+  "version": "2.5.10",
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "bundle": {
     "active": true,
@@ -17,7 +17,7 @@
     "copyright": "GNU General Public License v3.0",
     "category": "DeveloperTool",
     "shortDescription": "Clash Verge Rev App",
-    "createUpdaterArtifacts": true,
+    "createUpdaterArtifacts": false,
     "homepage": "https://github.com/AAAYNMMM/clash-verge-rev-app"
   },
   "build": {

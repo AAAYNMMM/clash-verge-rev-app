@@ -2,6 +2,8 @@
 
 Local maintainer request, approved in the development conversation on 2026-10-24. This is a local development issue; no upstream issue or pull request has been published.
 
+The maintainer approved extending this issue on 2026-11-05 to replace automatic application updates with GitHub Releases version reminders and a manual download link. The application must not automatically download or install updates.
+
 Baseline: `16a6a0f556ad050e596e89a79f80d1870edf0b23` (`dev`, application version 2.5.8).
 
 ## Reported regression

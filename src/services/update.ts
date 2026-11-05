@@ -1,102 +1,48 @@
-import {
-  check,
-  type CheckOptions,
-  type Update,
-} from '@tauri-apps/plugin-updater'
-import { compareVersions as compareSemver } from 'compare-versions'
+import { fetch } from '@tauri-apps/plugin-http'
+import { compareVersions } from 'compare-versions'
 
 import { version as appVersion } from '@root/package.json'
 
-const SEMVER_FULL_REGEX =
-  /^\d+(?:\.\d+){1,2}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/
-const SEMVER_SEARCH_REGEX =
-  /v?\d+(?:\.\d+){1,2}(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?/i
+const RELEASES_API =
+  'https://api.github.com/repos/AAAYNMMM/clash-verge-rev-app/releases/latest'
+const VERSION = /^v?(\d+\.\d+\.\d+)(?:\.(\d+)|\+(\d+))?$/i
 
-const normalizeVersion = (input: string | null | undefined): string | null => {
-  if (typeof input !== 'string') return null
-  const trimmed = input.trim()
-  if (!trimmed) return null
-  return trimmed.replace(/^v/i, '')
+export interface ReleaseUpdate {
+  available: true
+  version: string
+  body: string
 }
 
-const ensureSemver = (input: string | null | undefined): string | null => {
-  const normalized = normalizeVersion(input)
-  if (!normalized) return null
-  return SEMVER_FULL_REGEX.test(normalized) ? normalized : null
-}
-
-const extractSemver = (input: string | null | undefined): string | null => {
-  if (typeof input !== 'string') return null
-  const match = input.match(SEMVER_SEARCH_REGEX)
+const comparableVersion = (version: string): string | null => {
+  const match = version.trim().match(VERSION)
   if (!match) return null
-  return normalizeVersion(match[0])
+  return `${match[1]}.${match[2] ?? match[3] ?? '0'}`
 }
 
-const compareVersions = (a: string | null, b: string | null): number | null => {
-  if (!a || !b) return null
-  try {
-    const numericRevision = /^(\d+\.\d+\.\d+)\+(\d+)$/
-    return compareSemver(
-      a.replace(numericRevision, '$1.$2'),
-      b.replace(numericRevision, '$1.$2'),
-    )
-  } catch {
-    return null
+export const checkUpdateSafe = async (): Promise<ReleaseUpdate | null> => {
+  const response = await fetch(RELEASES_API, {
+    headers: { Accept: 'application/vnd.github+json' },
+  })
+  if (!response.ok)
+    throw new Error(`Release check failed: HTTP ${response.status}`)
+  const release: unknown = await response.json()
+  if (
+    !release ||
+    typeof release !== 'object' ||
+    !('tag_name' in release) ||
+    typeof release.tag_name !== 'string'
+  ) {
+    throw new Error('Release check returned an invalid version')
+  }
+  const remote = comparableVersion(release.tag_name)
+  const local = comparableVersion(appVersion)
+  if (!remote || !local)
+    throw new Error('Release check returned an invalid version')
+  if (compareVersions(remote, local) <= 0) return null
+  return {
+    available: true,
+    version: release.tag_name.replace(/^v/i, ''),
+    body:
+      'body' in release && typeof release.body === 'string' ? release.body : '',
   }
 }
-
-const resolveRemoteVersion = (update: Update): string | null => {
-  const primary = ensureSemver(update.version)
-  if (primary) return primary
-
-  const fallbackPrimary = extractSemver(update.version)
-  if (fallbackPrimary) return fallbackPrimary
-
-  const raw = update.rawJson ?? {}
-  const rawVersion = ensureSemver(
-    typeof raw.version === 'string' ? raw.version : null,
-  )
-  if (rawVersion) return rawVersion
-
-  const tagVersion = extractSemver(
-    typeof raw.tag_name === 'string' ? raw.tag_name : null,
-  )
-  if (tagVersion) return tagVersion
-
-  const nameVersion = extractSemver(
-    typeof raw.name === 'string' ? raw.name : null,
-  )
-  if (nameVersion) return nameVersion
-
-  return null
-}
-
-const localVersionNormalized = normalizeVersion(appVersion)
-
-export const checkUpdateSafe = async (
-  options?: CheckOptions,
-): Promise<Update | null> => {
-  const result = await check(options ?? {})
-  if (!result) return null
-
-  const remoteVersion = resolveRemoteVersion(result)
-  const comparison = compareVersions(remoteVersion, localVersionNormalized)
-
-  const isBuildToStable =
-    /^\d+\.\d+\.\d+\+[0-9A-Za-z.-]+$/.test(localVersionNormalized ?? '') &&
-    !/^\d+\.\d+\.\d+\+\d+$/.test(localVersionNormalized ?? '') &&
-    remoteVersion === localVersionNormalized?.split('+')[0]
-
-  if (comparison !== null && comparison <= 0 && !isBuildToStable) {
-    try {
-      await result.close()
-    } catch (err) {
-      console.warn('[updater] failed to close stale update resource', err)
-    }
-    return null
-  }
-
-  return result
-}
-
-export type { CheckOptions }

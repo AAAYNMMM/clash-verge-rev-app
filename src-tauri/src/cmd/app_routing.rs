@@ -2,6 +2,7 @@ use super::{CmdResult, WithErrorCode as _};
 use crate::config::app_routing::{compile_patterns, matches_node};
 
 #[tauri::command]
+#[specta::specta]
 pub async fn match_app_nodes(patterns: Vec<String>, names: Vec<String>) -> CmdResult<Vec<String>> {
     tokio::task::spawn_blocking(move || {
         let filters = compile_patterns(&patterns).with_error_code("APP_NODE_FILTER_INVALID")?;
@@ -18,6 +19,7 @@ pub async fn match_app_nodes(patterns: Vec<String>, names: Vec<String>) -> CmdRe
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_running_apps() -> CmdResult<Vec<tauri_plugin_clash_verge_sysinfo::processes::RunningApp>> {
     tokio::task::spawn_blocking(tauri_plugin_clash_verge_sysinfo::processes::list_running_apps)
         .await
@@ -25,6 +27,7 @@ pub async fn get_running_apps() -> CmdResult<Vec<tauri_plugin_clash_verge_sysinf
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn select_app_group_node(
     group_id: String,
     target: crate::config::app_routing::AppTarget,
@@ -35,6 +38,7 @@ pub async fn select_app_group_node(
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn select_app_rule_node(
     group_name: String,
     member: String,

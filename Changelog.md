@@ -36,7 +36,7 @@
 
 - 合并侧栏「规则／APP 规则」为一行双入口，左右独立点击与高亮，保留折叠和排序功能
 
-## v2.5.10
+## 历史分支 v2.5.10
 
 - 恢复 APP 页面右上角「链式代理」入口，关闭链式视图后返回自建 APP 分组
 - 新增 APP 节点筛选对前后查找、反向引用的支持，复杂表达式超限时提示错误
@@ -48,35 +48,42 @@
 - 调整 TUN 与 APP 模式为互斥，开启 TUN 自动退出 APP，保留分组设置
 
 ## v2.5.8
+<!-- Release-notes skeleton. Entries accumulate in ./Changelog.md as PRs land;
+     before publishing a release, distill them:
+     - user-visible changes only — no dev tooling, CI fixes, or refactors whose
+       effect is already covered by another entry
+     - describe outcomes, not internals: no internal module names, IPC or
+       protocol details, or implementation mechanics — write what the user
+       observes, not how the code achieves it
+     - one line per theme: merge entries that share a root cause
+     - each entry fits a single readable line (about 60 CJK characters); if it
+       overflows, it is packing multiple themes or detail that belongs in the
+       linked issue/PR — split it or drop the detail
+     - line grammar: open with a verb (修复/新增/优化), with the platform
+       first (Windows/macOS/Linux) when the change is platform-specific;
+       merge sub-symptoms as 主题：症状、症状; full-width punctuation,
+       「」 for UI labels, backticks for config keys and commands
+     - platform entries sit under their platform heading (bold, emoji
+       prefixed, ordered Windows/macOS/Linux, combined for pairs like
+       macOS/Linux) at the end of their section;
+       scripts-workflow/group_platforms.sh regroups, --check verifies
+     HTML comments are stripped by the update dialog's sanitizer and hidden on
+     GitHub, so they never reach users. -->
+## v2.5.10
+
+- 优化版本更新提醒：发现新版本后前往发布页手动下载
 
 <details>
 <summary><strong> 🐞 修复问题 </strong></summary>
 
-- 修复系统托盘代理组行不显示延迟、超时项与未测过项无法区分的问题
-- 修复不同订阅源的同名节点测速和延迟显示指向错误节点的问题
-- 修复端口设置混淆保存值与运行值、输入无效时缺少提示的问题
-- 修复已有内核进程阻止启动时缺少多语言说明和处理建议的问题
-- 修复从开始菜单再次打开应用后，窗口反复弹出并提示启动失败的问题
-- 修复多个代理集合包含同名节点时，代理组中的节点变灰并显示 ambiguous、无法选择的问题
-- 修复手动更新时重复下载后台已下载的安装包、启动时选「稍后」后每次启动都重新下载的问题
-- 修复下载更新时镜像缓慢或卡住不会切换下载地址、点击「取消」无法中止下载的问题
-- 修复关闭「自动检查更新」后，启动时仍弹出已下载更新的安装提示的问题
-- 修复从 Dock 退出、注销或关机时，应用可能长时间卡住无法退出的问题
-- 修复宽窗口下「订阅」页每行显示过多卡片，导致配置名称被截断的问题
+- 修复全局模式缺少 `GLOBAL` 策略组，无法单独选择全局出口
+- 修复服务模式下，SSH 节点的 `private-key` 使用私钥文件时内核无法启动
+- 修复服务模式下，内核更新的 GEO 数据库不会同步回应用目录，导致使用新分类的规则无法通过校验
+- 修复订阅的 DNS 配置变化后，「DNS 覆写」实际已关闭但开关仍显示开启且没有提示
 
 **🖥️ Windows**
 
-- 修复 Windows 升级后因文件权限异常无法启动、需要手动清理配置的问题
-- 修复 Windows 服务启动类型被改为手动后，软件启动卡住约两分钟的问题，并提供一键修复
-- 修复 Windows 长时间运行后，托盘菜单点击无响应的问题
-
-**🍎 macOS**
-
-- 修复 macOS 关闭 TUN 或退出后，系统 DNS 仍停留在 `114.114.114.114` 导致无法解析域名的问题
-
-**🖥️/🍎 Windows/macOS**
-
-- 修复 Windows/macOS 打开系统托盘菜单时，节点延迟与自动选择状态未刷新的问题
+- Windows：修复安装程序重新安装或覆盖时未提示退出运行中应用，导致卸载报错或覆盖失败
 
 </details>
 
@@ -92,11 +99,5 @@
 <details>
 <summary><strong> 🚀 优化改进 </strong></summary>
 
-- 优化端口设置窗口的实现，精简重复代码
-- 优化侧边栏流量图表的 CPU 占用
-
-**🖥️ Windows**
-
-- 优化 Windows 服务安全检查未通过时的提示：启动、安装或修复服务时说明原因与内核占用，并提供处理方法
 
 </details>

@@ -3,7 +3,7 @@ use fancy_regex::{Regex, RegexBuilder};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-#[derive(Default, Debug, Clone, Deserialize, Serialize)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize, specta::Type)]
 #[serde(default)]
 pub struct AppRoutingConfig {
     pub groups: Vec<AppRoutingGroup>,
@@ -11,7 +11,7 @@ pub struct AppRoutingConfig {
     pub rule_selections: std::collections::BTreeMap<String, String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, specta::Type)]
 pub struct AppRoutingGroup {
     pub id: String,
     pub name: String,
@@ -28,20 +28,20 @@ const fn enabled_by_default() -> bool {
     true
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, specta::Type)]
 pub struct AppMatcher {
     pub kind: AppMatchKind,
     pub value: String,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, specta::Type)]
 #[serde(rename_all = "lowercase")]
 pub enum AppMatchKind {
     Name,
     Path,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize, specta::Type)]
 #[serde(tag = "kind", rename_all = "lowercase")]
 pub enum AppTarget {
     Rule,

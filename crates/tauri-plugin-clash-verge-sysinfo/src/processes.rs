@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, specta::Type)]
 pub struct RunningApp {
     pub name: String,
     pub path: Option<String>,

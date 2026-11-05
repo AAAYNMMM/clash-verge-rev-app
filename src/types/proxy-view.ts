@@ -1,5 +1,5 @@
 export interface ProxyViewV1 {
-  schemaVersion: 1
+  schemaVersion: number
   orderSource: 'runtime' | 'fallback'
   providerState: 'ready' | 'unavailable'
   global: ProxyGroupView | null
@@ -28,12 +28,12 @@ export interface ProxyGroupView extends ProxyCapabilities {
   displayName?: string
   selectedRecordId?: string | null
   type: string
-  alive: boolean
-  now?: string
-  fixed?: string
-  hidden?: boolean
-  icon?: string
-  testUrl?: string
+  alive?: boolean
+  now?: string | null
+  fixed?: string | null
+  hidden?: boolean | null
+  icon?: string | null
+  testUrl?: string | null
   history: DelayHistory[]
   extra?: Record<string, { alive: boolean; history: DelayHistory[] }>
   members: ProxyMemberRef[]
@@ -43,13 +43,13 @@ export interface ProxyNodeView extends ProxyCapabilities {
   recordId: string
   name: string
   type: string
-  alive: boolean
+  alive?: boolean
   history: DelayHistory[]
   extra?: Record<string, { alive: boolean; history: DelayHistory[] }>
-  id?: string
-  hidden?: boolean
-  icon?: string
-  testUrl?: string
+  id?: string | null
+  hidden?: boolean | null
+  icon?: string | null
+  testUrl?: string | null
   source:
     | { kind: 'core'; proxyName: string }
     | { kind: 'provider'; providerName: string; proxyName: string }
@@ -72,8 +72,8 @@ export type ProxyMemberRef =
 interface ProxyProviderView {
   name: string
   vehicleType: 'HTTP' | 'File' | 'Inline'
-  updatedAt?: string
-  subscriptionInfo?: ProxySubscriptionInfo
+  updatedAt?: string | null
+  subscriptionInfo?: ProxySubscriptionInfo | null
   proxyRecordIds: string[]
 }
 

@@ -124,7 +124,7 @@ export const AppRuleSelectors = () => {
                   aria-label={original}
                   disabled={!enabled || pending !== null}
                   onChange={(event) =>
-                    void select(group, original, event.target.value)
+                    void select(group, original, event.target.value ?? '')
                   }
                   renderValue={(value) =>
                     value
